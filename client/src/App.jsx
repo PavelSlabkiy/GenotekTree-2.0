@@ -11,7 +11,15 @@ import {
   Baby,
   ChevronDown,
   Check,
-  AlertTriangle
+  AlertTriangle,
+  Home,
+  HeartPulse,
+  ThumbsUp,
+  FileText,
+  ClipboardList,
+  Globe2,
+  GitBranch,
+  Briefcase
 } from 'lucide-react';
 
 const API_URL = '/api';
@@ -1269,6 +1277,18 @@ function App() {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [toasts, setToasts] = useState([]);
 
+  const sidebarNav = [
+    { key: 'home', label: 'Главная', icon: Home },
+    { key: 'health', label: 'Здоровье', icon: HeartPulse },
+    { key: 'recommendations', label: 'Рекомендации', icon: ThumbsUp },
+    { key: 'medcard', label: 'Медицинская карта', icon: FileText },
+    { key: 'survey', label: 'Анкета', icon: ClipboardList },
+    { key: 'origin', label: 'Происхождение', icon: Globe2 },
+    { key: 'tree', label: 'Генеалогическое древо', icon: GitBranch },
+    { key: 'services', label: 'Генеалогические услуги', icon: Briefcase },
+    { key: 'pregnancy', label: 'Планирование беременности', icon: Baby }
+  ];
+
   // Fetch people data
   const fetchPeople = useCallback(async () => {
     try {
@@ -1416,12 +1436,34 @@ function App() {
 
   return (
     <div className="app">
-      <div className="tree-container">
-        <FamilyTree 
-          people={people}
-          selectedPerson={selectedPerson}
-          onSelectPerson={handleSelectPerson}
-        />
+      <aside className="sidebar">
+        <div className="sidebar-logo">Genotek</div>
+        <nav className="sidebar-nav">
+          {sidebarNav.map(item => {
+            const Icon = item.icon;
+            const isActive = item.key === 'tree';
+            return (
+              <button 
+                key={item.key}
+                type="button"
+                className={`nav-item ${isActive ? 'active' : ''}`}
+              >
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+
+      <div className="main-content">
+        <div className="tree-container">
+          <FamilyTree 
+            people={people}
+            selectedPerson={selectedPerson}
+            onSelectPerson={handleSelectPerson}
+          />
+        </div>
       </div>
 
       {selectedPerson && !showEditModal && !showAddRelativeModal && (
