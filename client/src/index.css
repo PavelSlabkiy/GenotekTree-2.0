@@ -116,12 +116,15 @@ body {
   overflow: auto;
   position: relative;
   background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
 }
 
 .tree-canvas {
   position: relative;
-  min-width: 100%;
-  min-height: 100%;
+  display: inline-block;
 }
 
 /* SVG Connectors Layer */

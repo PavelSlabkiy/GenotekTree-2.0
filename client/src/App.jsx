@@ -692,9 +692,7 @@ const FamilyTree = ({ people, selectedPerson, onSelectPerson }) => {
       className="tree-canvas" 
       style={{ 
         width: layout.canvasWidth, 
-        height: layout.canvasHeight,
-        minWidth: '100%',
-        minHeight: '100%'
+        height: layout.canvasHeight
       }}
     >
       <TreeConnectors 
