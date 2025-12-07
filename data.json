@@ -1,0 +1,121 @@
+{
+  "people": {
+    "me": {
+      "id": "me",
+      "name": "Алексей",
+      "gender": "male",
+      "partnerId": null,
+      "fatherId": "1762452081793",
+      "motherId": "1762452081797",
+      "children": [],
+      "lastName": "Слабкий",
+      "middleName": "Андреевич",
+      "isAlive": true,
+      "birthDate": "2000-04-05",
+      "birthPlace": "Москва",
+      "hasMatch": false
+    },
+    "1762452081793": {
+      "id": "1762452081793",
+      "name": "Сергей",
+      "lastName": "Иванов",
+      "middleName": "Сергеевич",
+      "gender": "male",
+      "fatherId": "1762452331540",
+      "motherId": "1762452331543",
+      "partnerId": "1762452081797",
+      "children": [
+        "me"
+      ],
+      "isAlive": true,
+      "birthDate": "1975-12-01",
+      "birthPlace": "Москва",
+      "hasMatch": false
+    },
+    "1762452081797": {
+      "id": "1762452081797",
+      "name": "Наталья",
+      "lastName": "Иванова",
+      "middleName": "Олеговна",
+      "gender": "female",
+      "fatherId": "1764962200975",
+      "motherId": "1764962200979",
+      "partnerId": "1762452081793",
+      "children": [
+        "me"
+      ],
+      "isAlive": true,
+      "birthDate": "1978-04-20",
+      "birthPlace": "Москва",
+      "hasMatch": false
+    },
+    "1762452331540": {
+      "id": "1762452331540",
+      "name": "Сергей",
+      "lastName": "Иванов",
+      "middleName": "Алексеевич",
+      "gender": "male",
+      "fatherId": null,
+      "motherId": null,
+      "partnerId": "1762452331543",
+      "children": [
+        "1762452081793"
+      ],
+      "isAlive": true,
+      "birthDate": "1950-10-10",
+      "birthPlace": "Москва",
+      "hasMatch": false
+    },
+    "1762452331543": {
+      "id": "1762452331543",
+      "name": "Анна",
+      "lastName": "Иванова",
+      "middleName": "Романовна",
+      "gender": "female",
+      "fatherId": null,
+      "motherId": null,
+      "partnerId": "1762452331540",
+      "children": [
+        "1762452081793"
+      ],
+      "isAlive": true,
+      "birthDate": "1952-06-19",
+      "birthPlace": "Москва",
+      "hasMatch": false
+    },
+    "1764962200975": {
+      "id": "1764962200975",
+      "name": "Олег",
+      "lastName": "Еремеев",
+      "middleName": "Геннадьевич",
+      "gender": "male",
+      "fatherId": null,
+      "motherId": null,
+      "partnerId": "1764962200979",
+      "children": [
+        "1762452081797"
+      ],
+      "isAlive": true,
+      "birthDate": "1945-01-01",
+      "birthPlace": "Москва",
+      "hasMatch": false
+    },
+    "1764962200979": {
+      "id": "1764962200979",
+      "name": "Анастасия",
+      "lastName": "Еремеева",
+      "middleName": "Петровна",
+      "gender": "female",
+      "fatherId": null,
+      "motherId": null,
+      "partnerId": "1764962200975",
+      "children": [
+        "1762452081797"
+      ],
+      "isAlive": true,
+      "birthDate": "1945-07-03",
+      "birthPlace": "Астана",
+      "hasMatch": true
+    }
+  }
+}
