@@ -884,7 +884,7 @@ const EditModal = ({ isOpen, person, onSave, onClose }) => {
 };
 
 // Add Relative Modal
-const AddRelativeModal = ({ isOpen, person, availableRelations, onAdd, onClose }) => {
+const AddRelativeModal = ({ isOpen, person, availableRelations, initialRelation, onAdd, onClose }) => {
   const [selectedRelation, setSelectedRelation] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -896,7 +896,7 @@ const AddRelativeModal = ({ isOpen, person, availableRelations, onAdd, onClose }
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedRelation(null);
+      setSelectedRelation(initialRelation || (availableRelations?.[0] || null));
       setFormData({
         name: '',
         lastName: '',
@@ -905,7 +905,7 @@ const AddRelativeModal = ({ isOpen, person, availableRelations, onAdd, onClose }
         birthPlace: ''
       });
     }
-  }, [isOpen]);
+  }, [isOpen, initialRelation, availableRelations]);
 
   if (!isOpen) return null;
 
@@ -935,32 +935,7 @@ const AddRelativeModal = ({ isOpen, person, availableRelations, onAdd, onClose }
         </div>
         <form onSubmit={handleSubmit}>
           <div className="edit-modal-body">
-            {!selectedRelation ? (
-              <div className="relation-options">
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.9rem' }}>
-                  Выберите тип родственной связи:
-                </p>
-                {availableRelations.map(relation => {
-                  const { label, icon: Icon } = relationLabels[relation];
-                  return (
-                    <div 
-                      key={relation}
-                      className="dropdown-item"
-                      onClick={() => setSelectedRelation(relation)}
-                      style={{ 
-                        padding: '14px 16px', 
-                        borderRadius: '8px',
-                        marginBottom: '8px',
-                        background: 'var(--bg-tertiary)'
-                      }}
-                    >
-                      <Icon size={20} />
-                      <span>{label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
+            {selectedRelation ? (
               <>
                 <div style={{ 
                   display: 'flex', 
@@ -980,19 +955,6 @@ const AddRelativeModal = ({ isOpen, person, availableRelations, onAdd, onClose }
                       </>
                     );
                   })()}
-                  <button 
-                    type="button"
-                    onClick={() => setSelectedRelation(null)}
-                    style={{ 
-                      marginLeft: 'auto', 
-                      background: 'none', 
-                      border: 'none', 
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <X size={16} />
-                  </button>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Фамилия</label>
@@ -1047,7 +1009,7 @@ const AddRelativeModal = ({ isOpen, person, availableRelations, onAdd, onClose }
                   />
                 </div>
               </>
-            )}
+            ) : null}
           </div>
           <div className="edit-modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>
@@ -1135,14 +1097,14 @@ const PersonCard = ({ person, people, onClose, onEdit, onAddRelative, onDelete, 
                       className="dropdown-item"
                       onClick={() => {
                         setShowDropdown(false);
-                        onAddRelative(availableRelations);
+                        onAddRelative(relation);
                       }}
                     >
-                      {relation === 'partner' && <><Heart size={16} /> Partner</>}
-                      {relation === 'father' && <><User size={16} /> Father</>}
-                      {relation === 'mother' && <><User size={16} /> Mother</>}
-                      {relation === 'son' && <><Baby size={16} /> Son</>}
-                      {relation === 'daughter' && <><Baby size={16} /> Daughter</>}
+                      {relation === 'partner' && <><Heart size={16} /> Партнёр</>}
+                      {relation === 'father' && <><User size={16} /> Отец</>}
+                      {relation === 'mother' && <><User size={16} /> Мать</>}
+                      {relation === 'son' && <><Baby size={16} /> Сын</>}
+                      {relation === 'daughter' && <><Baby size={16} /> Дочь</>}
                     </div>
                   ))}
                 </div>
@@ -1274,6 +1236,7 @@ function App() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddRelativeModal, setShowAddRelativeModal] = useState(false);
   const [availableRelations, setAvailableRelations] = useState([]);
+  const [initialRelation, setInitialRelation] = useState(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [toasts, setToasts] = useState([]);
 
@@ -1352,8 +1315,9 @@ function App() {
   };
 
   // Handle add relative
-  const handleAddRelative = (relations) => {
-    setAvailableRelations(relations);
+  const handleAddRelative = (relation) => {
+    setAvailableRelations([relation]);
+    setInitialRelation(relation);
     setShowAddRelativeModal(true);
   };
 
@@ -1489,6 +1453,7 @@ function App() {
         isOpen={showAddRelativeModal}
         person={selectedPerson}
         availableRelations={availableRelations}
+        initialRelation={initialRelation}
         onAdd={handleSaveRelative}
         onClose={() => setShowAddRelativeModal(false)}
       />
