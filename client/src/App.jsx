@@ -1124,7 +1124,7 @@ const PersonCard = ({ person, people, onClose, onEdit, onAddRelative, onDelete, 
                 onClick={() => setShowDropdown(!showDropdown)}
               >
                 <UserPlus size={16} />
-                +Relative
+                + Родственник
                 <ChevronDown size={16} />
               </button>
               {showDropdown && (
@@ -1151,7 +1151,7 @@ const PersonCard = ({ person, people, onClose, onEdit, onAddRelative, onDelete, 
 
             <button className="btn btn-edit-outline" onClick={onEdit}>
               <Edit2 size={16} />
-              Edit
+              Редактировать
             </button>
           </div>
 
@@ -1255,7 +1255,7 @@ const PersonCard = ({ person, people, onClose, onEdit, onAddRelative, onDelete, 
         <div className="card-actions card-actions-bottom">
           <button className="btn btn-delete-ghost" onClick={onDelete}>
             <Trash2 size={16} />
-            Delete relative
+            Удалить родственника
           </button>
         </div>
       </div>

@@ -12,9 +12,9 @@
   --text-primary: #1e293b;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
-  --accent-primary: #10b981;
-  --accent-secondary: #059669;
-  --accent-tertiary: #047857;
+  --accent-primary: #1b3463;
+  --accent-secondary: #1b3463;
+  --accent-tertiary: #1b3463;
   --male-color: #77c1df;
   --female-color: #f0949e;
   --border-color: #e2e8f0;
@@ -96,7 +96,7 @@ body {
 .sidebar-logo {
   font-size: 32px;
   font-weight: 700;
-  color: #1b3463;
+  color: #111111;
 }
 
 .sidebar-nav {
@@ -125,13 +125,13 @@ body {
 }
 
 .nav-item:hover {
-  color: #1b3463;
+  color: #111111;
 }
 
 .nav-item.active {
-  color: #1b3463;
+  color: #111111;
   background: #f8fafc;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 18px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* Tree Container */
@@ -585,6 +585,7 @@ body {
   color: #ffffff;
   justify-content: center;
   width: 100%;
+  white-space: nowrap;
 }
 
 .btn-add-relative:hover {
@@ -597,7 +598,10 @@ body {
   border: 1px solid #1b3463;
   color: #1b3463;
   justify-content: center;
-  min-width: 120px;
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .btn-edit-outline:hover {
