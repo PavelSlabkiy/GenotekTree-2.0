@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-  TreePine, 
   User, 
   Calendar, 
   MapPin, 
@@ -12,8 +11,7 @@ import {
   Baby,
   ChevronDown,
   Check,
-  AlertTriangle,
-  Plus
+  AlertTriangle
 } from 'lucide-react';
 
 const API_URL = '/api';
@@ -1113,6 +1111,44 @@ const PersonCard = ({ person, people, onClose, onEdit, onAddRelative, onDelete, 
         </div>
         
         <div className="card-body">
+          <div className="card-actions-top">
+            <div className="dropdown" style={{ position: 'relative' }}>
+              <button 
+                className="btn btn-add-relative"
+                onClick={() => setShowDropdown(!showDropdown)}
+              >
+                <UserPlus size={16} />
+                +Relative
+                <ChevronDown size={16} />
+              </button>
+              {showDropdown && (
+                <div className="dropdown-menu" style={{ minWidth: '160px' }}>
+                  {availableRelations.map(relation => (
+                    <div 
+                      key={relation}
+                      className="dropdown-item"
+                      onClick={() => {
+                        setShowDropdown(false);
+                        onAddRelative(availableRelations);
+                      }}
+                    >
+                      {relation === 'partner' && <><Heart size={16} /> Partner</>}
+                      {relation === 'father' && <><User size={16} /> Father</>}
+                      {relation === 'mother' && <><User size={16} /> Mother</>}
+                      {relation === 'son' && <><Baby size={16} /> Son</>}
+                      {relation === 'daughter' && <><Baby size={16} /> Daughter</>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button className="btn btn-edit-outline" onClick={onEdit}>
+              <Edit2 size={16} />
+              Edit
+            </button>
+          </div>
+
           <div className="card-section">
             <h4 className="card-section-title">Информация</h4>
             
@@ -1210,43 +1246,10 @@ const PersonCard = ({ person, people, onClose, onEdit, onAddRelative, onDelete, 
           )}
         </div>
 
-        <div className="card-actions">
-          <button className="btn btn-secondary" onClick={onEdit}>
-            <Edit2 size={16} />
-            Редактировать
-          </button>
-          <div className="dropdown" style={{ position: 'relative' }}>
-            <button 
-              className="btn btn-primary"
-              onClick={() => setShowDropdown(!showDropdown)}
-            >
-              <UserPlus size={16} />
-              + Родственник
-              <ChevronDown size={16} />
-            </button>
-            {showDropdown && (
-              <div className="dropdown-menu" style={{ minWidth: '160px' }}>
-                {availableRelations.map(relation => (
-                  <div 
-                    key={relation}
-                    className="dropdown-item"
-                    onClick={() => {
-                      setShowDropdown(false);
-                      onAddRelative(availableRelations);
-                    }}
-                  >
-                    {relation === 'partner' && <><Heart size={16} /> Партнёр</>}
-                    {relation === 'father' && <><User size={16} /> Отец</>}
-                    {relation === 'mother' && <><User size={16} /> Мать</>}
-                    {relation === 'son' && <><Baby size={16} /> Сын</>}
-                    {relation === 'daughter' && <><Baby size={16} /> Дочь</>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <button className="btn btn-danger" onClick={onDelete}>
+        <div className="card-actions card-actions-bottom">
+          <button className="btn btn-delete-ghost" onClick={onDelete}>
             <Trash2 size={16} />
+            Delete relative
           </button>
         </div>
       </div>
@@ -1415,19 +1418,6 @@ function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <div className="header-title">
-          <TreePine />
-          <h1>Семейное Древо</h1>
-        </div>
-        <div className="header-actions">
-          <button className="btn btn-primary" onClick={handleAddNewPerson}>
-            <Plus size={18} />
-            Добавить человека
-          </button>
-        </div>
-      </header>
-
       <div className="tree-container">
         <FamilyTree 
           people={people}
