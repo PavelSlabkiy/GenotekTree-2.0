@@ -40,8 +40,8 @@
       "lastName": "Иванова",
       "middleName": "Олеговна",
       "gender": "female",
-      "fatherId": "1764962200975",
-      "motherId": "1764962200979",
+      "fatherId": "1765224962158",
+      "motherId": "1765225015661",
       "partnerId": "1762452081793",
       "children": [
         "me"
@@ -50,7 +50,7 @@
       "birthDate": "1978-04-20",
       "birthPlace": "Москва",
       "hasMatch": false,
-      "information": null
+      "information": ""
     },
     "1762452331540": {
       "id": "1762452331540",
@@ -86,35 +86,34 @@
       "birthDate": "1952-06-19",
       "birthPlace": "Москва",
       "hasMatch": false,
-      "information": null
+      "information": ""
     },
-    "1764962200975": {
-      "id": "1764962200975",
+    "1765224962158": {
+      "id": "1765224962158",
       "name": "Олег",
       "lastName": "Еремеев",
       "middleName": "Геннадьевич",
       "gender": "male",
       "fatherId": null,
       "motherId": null,
-      "partnerId": "1764962200979",
+      "partnerId": "1765225015661",
       "children": [
         "1762452081797"
       ],
       "isAlive": true,
       "birthDate": "1945-01-01",
       "birthPlace": "Москва",
-      "hasMatch": true,
-      "information": null
+      "hasMatch": true
     },
-    "1764962200979": {
-      "id": "1764962200979",
+    "1765225015661": {
+      "id": "1765225015661",
       "name": "Анастасия",
       "lastName": "Еремеева",
       "middleName": "Петровна",
       "gender": "female",
       "fatherId": null,
       "motherId": null,
-      "partnerId": "1764962200975",
+      "partnerId": "1765224962158",
       "children": [
         "1762452081797"
       ],

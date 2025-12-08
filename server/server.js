@@ -382,25 +382,30 @@ app.post('/api/smart-matching', async (req, res) => {
     
     const result = await runSmartMatching(data, database);
     
-    // Update hasMatch flag for matched people
-    if (result.matchedDataIds && result.matchedDataIds.length > 0) {
-      result.matchedDataIds.forEach(id => {
-        if (data.people[id]) {
-          data.people[id].hasMatch = true;
-        }
-      });
-      
-      // Also reset hasMatch for people not in matchedDataIds
-      Object.keys(data.people).forEach(id => {
-        if (!result.matchedDataIds.includes(id)) {
-          data.people[id].hasMatch = false;
-        }
-      });
-      
-      writeData(data);
-    }
+    // Filter matches to only include those with actual relatives to add
+    // (more than just the matched person in the fragment)
+    const validMatches = (result.matches || []).filter(match => {
+      if (!match.people) return false;
+      const fragmentPeopleCount = Object.keys(match.people).length;
+      // Only valid if there are more people in fragment than just the matched person
+      return fragmentPeopleCount > 1;
+    });
     
-    res.json(result);
+    // Get IDs of people with valid matches (that have relatives to add)
+    const matchedIdsWithRelatives = [...new Set(validMatches.map(m => m.data_id))];
+    
+    // Reset all hasMatch flags first, then set true only for people with valid matches
+    Object.keys(data.people).forEach(id => {
+      data.people[id].hasMatch = matchedIdsWithRelatives.includes(id);
+    });
+    
+    writeData(data);
+    
+    // Return only valid matches
+    res.json({
+      matches: validMatches,
+      matchedDataIds: matchedIdsWithRelatives
+    });
   } catch (error) {
     console.error('Smart matching error:', error);
     res.status(500).json({ error: 'Smart matching failed', details: error.message });
@@ -420,8 +425,13 @@ app.get('/api/people/:id/matches', async (req, res) => {
     
     const result = await runSmartMatching(data, database);
     
-    // Filter matches for this specific person
-    const personMatches = (result.matches || []).filter(m => m.data_id === personId);
+    // Filter matches for this specific person AND only include those with relatives to add
+    const personMatches = (result.matches || []).filter(m => {
+      if (m.data_id !== personId) return false;
+      if (!m.people) return false;
+      // Only valid if there are more people in fragment than just the matched person
+      return Object.keys(m.people).length > 1;
+    });
     
     res.json({ matches: personMatches });
   } catch (error) {
