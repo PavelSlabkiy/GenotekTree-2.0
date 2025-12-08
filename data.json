@@ -13,7 +13,8 @@
       "isAlive": true,
       "birthDate": "2000-04-05",
       "birthPlace": "Москва",
-      "hasMatch": false
+      "hasMatch": false,
+      "information": null
     },
     "1762452081793": {
       "id": "1762452081793",
@@ -30,7 +31,8 @@
       "isAlive": true,
       "birthDate": "1975-12-01",
       "birthPlace": "Москва",
-      "hasMatch": false
+      "hasMatch": false,
+      "information": null
     },
     "1762452081797": {
       "id": "1762452081797",
@@ -47,7 +49,8 @@
       "isAlive": true,
       "birthDate": "1978-04-20",
       "birthPlace": "Москва",
-      "hasMatch": false
+      "hasMatch": false,
+      "information": null
     },
     "1762452331540": {
       "id": "1762452331540",
@@ -64,7 +67,8 @@
       "isAlive": true,
       "birthDate": "1950-10-10",
       "birthPlace": "Москва",
-      "hasMatch": false
+      "hasMatch": false,
+      "information": ""
     },
     "1762452331543": {
       "id": "1762452331543",
@@ -81,7 +85,8 @@
       "isAlive": true,
       "birthDate": "1952-06-19",
       "birthPlace": "Москва",
-      "hasMatch": false
+      "hasMatch": false,
+      "information": null
     },
     "1764962200975": {
       "id": "1764962200975",
@@ -98,7 +103,8 @@
       "isAlive": true,
       "birthDate": "1945-01-01",
       "birthPlace": "Москва",
-      "hasMatch": false
+      "hasMatch": false,
+      "information": null
     },
     "1764962200979": {
       "id": "1764962200979",
@@ -115,7 +121,8 @@
       "isAlive": true,
       "birthDate": "1945-07-03",
       "birthPlace": "Астана",
-      "hasMatch": true
+      "hasMatch": true,
+      "information": null
     }
   }
 }

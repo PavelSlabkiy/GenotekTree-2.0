@@ -784,7 +784,8 @@ const EditModal = ({ isOpen, person, onSave, onClose }) => {
     lastName: '',
     middleName: '',
     birthDate: '',
-    birthPlace: ''
+    birthPlace: '',
+    information: ''
   });
 
   useEffect(() => {
@@ -794,7 +795,8 @@ const EditModal = ({ isOpen, person, onSave, onClose }) => {
         lastName: person.lastName || '',
         middleName: person.middleName || '',
         birthDate: person.birthDate || '',
-        birthPlace: person.birthPlace || ''
+        birthPlace: person.birthPlace || '',
+        information: person.information || ''
       });
     }
   }, [person]);
@@ -866,6 +868,16 @@ const EditModal = ({ isOpen, person, onSave, onClose }) => {
                 value={formData.birthPlace}
                 onChange={e => setFormData({...formData, birthPlace: e.target.value})}
                 placeholder="Введите место рождения"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Описание</label>
+              <textarea
+                className="form-input form-textarea"
+                value={formData.information}
+                onChange={e => setFormData({...formData, information: e.target.value})}
+                placeholder="Введите описание"
+                rows={4}
               />
             </div>
           </div>
@@ -1210,6 +1222,13 @@ const PersonCard = ({ person, people, onClose, onEdit, onAddRelative, onDelete, 
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {person.information && (
+            <div className="card-section">
+              <h4 className="card-section-title">Описание</h4>
+              <p className="card-description">{person.information}</p>
             </div>
           )}
         </div>

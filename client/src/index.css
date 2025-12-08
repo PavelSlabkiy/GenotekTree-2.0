@@ -469,6 +469,13 @@ body {
   text-decoration: underline;
 }
 
+.card-description {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 .relative-list {
   display: flex;
   flex-wrap: wrap;
@@ -710,6 +717,12 @@ body {
 
 .form-input::placeholder {
   color: var(--text-muted);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
 }
 
 .form-row {
