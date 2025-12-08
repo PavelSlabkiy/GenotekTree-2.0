@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 const app = express();
 const PORT = 3001;
@@ -10,8 +11,10 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-// Path to data file
+// Path to data files
 const DATA_FILE = path.join(__dirname, '..', 'data.json');
+const DATABASE_FILE = path.join(__dirname, '..', 'database.json');
+const SMART_MATCHING_SCRIPT = path.join(__dirname, '..', 'smart-matching.py');
 
 // Helper functions
 const readData = () => {
@@ -36,6 +39,56 @@ const writeData = (data) => {
 
 const generateId = () => {
   return Date.now().toString();
+};
+
+const readDatabase = () => {
+  try {
+    const data = fs.readFileSync(DATABASE_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading database file:', error);
+    return { tree_id: {} };
+  }
+};
+
+// Run smart-matching Python script
+const runSmartMatching = (dataJson, databaseJson) => {
+  return new Promise((resolve, reject) => {
+    const python = spawn('python3', [SMART_MATCHING_SCRIPT]);
+    
+    let stdout = '';
+    let stderr = '';
+    
+    python.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+    
+    python.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    
+    python.on('close', (code) => {
+      if (code !== 0) {
+        console.error('Smart matching stderr:', stderr);
+        reject(new Error(`Smart matching failed with code ${code}`));
+        return;
+      }
+      try {
+        const result = JSON.parse(stdout);
+        resolve(result);
+      } catch (e) {
+        reject(new Error('Failed to parse smart matching output'));
+      }
+    });
+    
+    // Send input to Python script
+    const input = JSON.stringify({
+      data: JSON.stringify(dataJson),
+      db: JSON.stringify(databaseJson)
+    });
+    python.stdin.write(input);
+    python.stdin.end();
+  });
 };
 
 // API Routes
@@ -319,6 +372,143 @@ app.get('/api/people/:id/family', (req, res) => {
   };
   
   res.json(familyInfo);
+});
+
+// Smart matching endpoint
+app.post('/api/smart-matching', async (req, res) => {
+  try {
+    const data = readData();
+    const database = readDatabase();
+    
+    const result = await runSmartMatching(data, database);
+    
+    // Update hasMatch flag for matched people
+    if (result.matchedDataIds && result.matchedDataIds.length > 0) {
+      result.matchedDataIds.forEach(id => {
+        if (data.people[id]) {
+          data.people[id].hasMatch = true;
+        }
+      });
+      
+      // Also reset hasMatch for people not in matchedDataIds
+      Object.keys(data.people).forEach(id => {
+        if (!result.matchedDataIds.includes(id)) {
+          data.people[id].hasMatch = false;
+        }
+      });
+      
+      writeData(data);
+    }
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Smart matching error:', error);
+    res.status(500).json({ error: 'Smart matching failed', details: error.message });
+  }
+});
+
+// Get matches for a specific person
+app.get('/api/people/:id/matches', async (req, res) => {
+  try {
+    const data = readData();
+    const database = readDatabase();
+    const personId = req.params.id;
+    
+    if (!data.people[personId]) {
+      return res.status(404).json({ error: 'Person not found' });
+    }
+    
+    const result = await runSmartMatching(data, database);
+    
+    // Filter matches for this specific person
+    const personMatches = (result.matches || []).filter(m => m.data_id === personId);
+    
+    res.json({ matches: personMatches });
+  } catch (error) {
+    console.error('Get matches error:', error);
+    res.status(500).json({ error: 'Failed to get matches', details: error.message });
+  }
+});
+
+// Confirm match and add fragment to tree
+app.post('/api/people/:id/confirm-match', (req, res) => {
+  const data = readData();
+  const personId = req.params.id;
+  const person = data.people[personId];
+  const { match } = req.body; // Contains the full match object including people fragment
+  
+  if (!person) {
+    return res.status(404).json({ error: 'Person not found' });
+  }
+  
+  if (!match || !match.people) {
+    return res.status(400).json({ error: 'Invalid match data' });
+  }
+  
+  const fragment = match.people;
+  const matchedDbId = match.database_id;
+  
+  // Create ID mapping from old database IDs to new IDs
+  const idMapping = {};
+  
+  // First pass: generate new IDs for all people in fragment except the matched person
+  Object.keys(fragment).forEach(oldId => {
+    if (oldId === matchedDbId) {
+      // The matched person maps to the existing person in our tree
+      idMapping[oldId] = personId;
+    } else {
+      // Generate new ID for relatives
+      idMapping[oldId] = generateId() + Math.random().toString(36).substr(2, 4);
+    }
+  });
+  
+  // Second pass: add people with remapped IDs
+  Object.entries(fragment).forEach(([oldId, fragmentPerson]) => {
+    const newId = idMapping[oldId];
+    
+    // Skip the matched person (they already exist)
+    if (oldId === matchedDbId) {
+      // But update their parent references if they don't have them
+      if (fragmentPerson.fatherId && !person.fatherId) {
+        person.fatherId = idMapping[fragmentPerson.fatherId] || null;
+      }
+      if (fragmentPerson.motherId && !person.motherId) {
+        person.motherId = idMapping[fragmentPerson.motherId] || null;
+      }
+      // Mark match as confirmed
+      person.hasMatch = false;
+      data.people[personId] = person;
+      return;
+    }
+    
+    // Create new person with remapped IDs
+    const newPerson = {
+      id: newId,
+      name: fragmentPerson.name || '',
+      lastName: fragmentPerson.lastName || '',
+      middleName: fragmentPerson.middleName || '',
+      gender: fragmentPerson.gender || 'male',
+      fatherId: fragmentPerson.fatherId ? (idMapping[fragmentPerson.fatherId] || null) : null,
+      motherId: fragmentPerson.motherId ? (idMapping[fragmentPerson.motherId] || null) : null,
+      partnerId: fragmentPerson.partnerId ? (idMapping[fragmentPerson.partnerId] || null) : null,
+      children: (fragmentPerson.children || [])
+        .map(childId => idMapping[childId])
+        .filter(Boolean),
+      isAlive: fragmentPerson.isAlive !== undefined ? fragmentPerson.isAlive : true,
+      birthDate: fragmentPerson.birthDate || '',
+      birthPlace: fragmentPerson.birthPlace || '',
+      information: fragmentPerson.information || '',
+      hasMatch: false
+    };
+    
+    data.people[newId] = newPerson;
+  });
+  
+  if (writeData(data)) {
+    res.json({ success: true, message: 'Match confirmed and relatives added', people: data.people });
+  } else {
+    res.status(500).json({ error: 'Failed to save data' });
+  }
 });
 
 app.listen(PORT, () => {

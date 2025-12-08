@@ -103,7 +103,7 @@
       "isAlive": true,
       "birthDate": "1945-01-01",
       "birthPlace": "Москва",
-      "hasMatch": false,
+      "hasMatch": true,
       "information": null
     },
     "1764962200979": {
@@ -122,7 +122,7 @@
       "birthDate": "1945-07-03",
       "birthPlace": "Астана",
       "hasMatch": true,
-      "information": null
+      "information": ""
     }
   }
 }

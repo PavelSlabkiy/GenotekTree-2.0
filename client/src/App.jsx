@@ -19,7 +19,11 @@ import {
   ClipboardList,
   Globe2,
   GitBranch,
-  Briefcase
+  Briefcase,
+  RefreshCw,
+  TreePine,
+  ChevronRight,
+  Users
 } from 'lucide-react';
 
 const API_URL = '/api';
@@ -651,9 +655,16 @@ const TreeConnectors = ({ people, positions, width, height }) => {
 // PERSON NODE COMPONENT
 // ============================================
 
-const PersonNode = ({ person, position, isSelected, onClick }) => {
+const PersonNode = ({ person, position, isSelected, onClick, onMatchClick }) => {
   const fullName = getFullName(person);
   const birthYear = person.birthDate ? new Date(person.birthDate).getFullYear() : null;
+
+  const handleMatchClick = (e) => {
+    e.stopPropagation();
+    if (onMatchClick) {
+      onMatchClick(person);
+    }
+  };
 
   return (
     <div 
@@ -664,6 +675,15 @@ const PersonNode = ({ person, position, isSelected, onClick }) => {
       }}
       onClick={() => onClick(person)}
     >
+      {person.hasMatch && (
+        <button 
+          className="match-indicator"
+          onClick={handleMatchClick}
+          title="Найдено совпадение"
+        >
+          <RefreshCw size={14} />
+        </button>
+      )}
       <div className="person-avatar">
         <User size={20} />
       </div>
@@ -677,7 +697,7 @@ const PersonNode = ({ person, position, isSelected, onClick }) => {
 // FAMILY TREE COMPONENT
 // ============================================
 
-const FamilyTree = ({ people, selectedPerson, onSelectPerson }) => {
+const FamilyTree = ({ people, selectedPerson, onSelectPerson, onMatchClick }) => {
   const layout = useMemo(() => {
     const engine = new TreeLayoutEngine(people);
     return engine.getLayout();
@@ -721,6 +741,7 @@ const FamilyTree = ({ people, selectedPerson, onSelectPerson }) => {
               position={position}
               isSelected={selectedPerson?.id === person.id}
               onClick={onSelectPerson}
+              onMatchClick={onMatchClick}
             />
           );
         })}
@@ -1245,6 +1266,145 @@ const PersonCard = ({ person, people, onClose, onEdit, onAddRelative, onDelete, 
 };
 
 // ============================================
+// MATCH VERIFICATION MODAL
+// ============================================
+
+const MatchVerificationModal = ({ isOpen, person, matches, onConfirm, onClose }) => {
+  const [expandedMatch, setExpandedMatch] = useState(null);
+
+  if (!isOpen || !person) return null;
+
+  // Sort matches by score descending
+  const sortedMatches = [...(matches || [])].sort((a, b) => b.score - a.score);
+
+  const toggleExpand = (matchIndex) => {
+    setExpandedMatch(expandedMatch === matchIndex ? null : matchIndex);
+  };
+
+  const getRelativesFromFragment = (match) => {
+    if (!match.people) return [];
+    const matchedPersonId = match.database_id;
+    return Object.values(match.people).filter(p => p.id !== matchedPersonId);
+  };
+
+  return (
+    <div className="modal-overlay match-modal" onClick={onClose}>
+      <div className="modal-content match-verification-content" onClick={e => e.stopPropagation()}>
+        <div className="edit-modal-header">
+          <h3 className="edit-modal-title">Проверка совпадений</h3>
+          <button className="card-close" onClick={onClose}>
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="match-modal-body">
+          {sortedMatches.length === 0 ? (
+            <p className="no-matches">Совпадения не найдены</p>
+          ) : (
+            sortedMatches.map((match, index) => {
+              const matchedPerson = match.people?.[match.database_id];
+              const relatives = getRelativesFromFragment(match);
+              const isExpanded = expandedMatch === index;
+
+              return (
+                <div key={index} className="match-card">
+                  <div className="match-comparison">
+                    {/* Current person (left) */}
+                    <div className="match-person current-person">
+                      <h4 className="match-person-title">Ваше дерево</h4>
+                      <div className="match-person-info">
+                        <p className="match-name">{getFullName(person)}</p>
+                        <p className="match-detail">
+                          <Calendar size={14} />
+                          {person.birthDate || 'Не указана'}
+                        </p>
+                        <p className="match-detail">
+                          <MapPin size={14} />
+                          {person.birthPlace || 'Не указано'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="match-arrow">
+                      <RefreshCw size={24} />
+                    </div>
+
+                    {/* Matched person (right) */}
+                    <div className="match-person found-person">
+                      <h4 className="match-person-title">Найдено в дереве: {match.tree_owner}</h4>
+                      <div className="match-person-info">
+                        <p className="match-name">{matchedPerson ? getFullName(matchedPerson) : 'Неизвестно'}</p>
+                        <p className="match-detail">
+                          <Calendar size={14} />
+                          {matchedPerson?.birthDate || 'Не указана'}
+                        </p>
+                        <p className="match-detail">
+                          <MapPin size={14} />
+                          {matchedPerson?.birthPlace || 'Не указано'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="match-score">
+                    <span className="score-label">Вероятность совпадения:</span>
+                    <span className="score-value">{match.score?.toFixed(1)}%</span>
+                  </div>
+
+                  {/* Expandable relatives list */}
+                  {relatives.length > 0 && (
+                    <div className="match-relatives-section">
+                      <button 
+                        className="match-relatives-toggle"
+                        onClick={() => toggleExpand(index)}
+                      >
+                        <Users size={16} />
+                        <span>Родственники для добавления ({relatives.length})</span>
+                        <ChevronRight 
+                          size={16} 
+                          className={`toggle-icon ${isExpanded ? 'expanded' : ''}`}
+                        />
+                      </button>
+                      
+                      {isExpanded && (
+                        <div className="match-relatives-list">
+                          {relatives.map((relative, relIndex) => (
+                            <div key={relIndex} className="match-relative-item">
+                              <p className="relative-name">{getFullName(relative)}</p>
+                              <p className="relative-detail">
+                                <Calendar size={12} />
+                                {relative.birthDate || 'Не указана'}
+                              </p>
+                              <p className="relative-detail">
+                                <MapPin size={12} />
+                                {relative.birthPlace || 'Не указано'}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <button 
+                    className="btn btn-primary match-confirm-btn"
+                    onClick={() => onConfirm(match)}
+                  >
+                    <Check size={16} />
+                    Подтвердить совпадение
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // MAIN APP COMPONENT
 // ============================================
 
@@ -1258,6 +1418,9 @@ function App() {
   const [initialRelation, setInitialRelation] = useState(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [toasts, setToasts] = useState([]);
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [matchPerson, setMatchPerson] = useState(null);
+  const [personMatches, setPersonMatches] = useState([]);
 
   const sidebarNav = [
     { key: 'home', label: 'Главная', icon: Home },
@@ -1326,6 +1489,8 @@ function App() {
         setSelectedPerson(updatedPerson);
         setShowEditModal(false);
         showToast('Изменения сохранены');
+        // Run smart matching after edit
+        runSmartMatching();
       }
     } catch (error) {
       console.error('Error updating person:', error);
@@ -1352,6 +1517,8 @@ function App() {
         await fetchPeople();
         setShowAddRelativeModal(false);
         showToast('Родственник добавлен');
+        // Run smart matching after adding relative
+        runSmartMatching();
       }
     } catch (error) {
       console.error('Error adding relative:', error);
@@ -1407,6 +1574,69 @@ function App() {
     }
   };
 
+  // Run smart matching
+  const runSmartMatching = async () => {
+    try {
+      const response = await fetch(`${API_URL}/smart-matching`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        await fetchPeople(); // Refresh to get updated hasMatch flags
+      }
+    } catch (error) {
+      console.error('Smart matching error:', error);
+    }
+  };
+
+  // Handle match icon click - open match modal
+  const handleMatchClick = async (person) => {
+    try {
+      setMatchPerson(person);
+      const response = await fetch(`${API_URL}/people/${person.id}/matches`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setPersonMatches(data.matches || []);
+        setShowMatchModal(true);
+      }
+    } catch (error) {
+      console.error('Error getting matches:', error);
+      showToast('Ошибка загрузки совпадений', 'error');
+    }
+  };
+
+  // Handle match confirmation
+  const handleConfirmMatch = async (match) => {
+    try {
+      const response = await fetch(`${API_URL}/people/${matchPerson.id}/confirm-match`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match })
+      });
+      
+      if (response.ok) {
+        await fetchPeople();
+        setShowMatchModal(false);
+        setMatchPerson(null);
+        setPersonMatches([]);
+        showToast('Совпадение подтверждено, родственники добавлены');
+        // Run smart matching again to find new matches
+        await runSmartMatching();
+      }
+    } catch (error) {
+      console.error('Error confirming match:', error);
+      showToast('Ошибка подтверждения', 'error');
+    }
+  };
+
+  // Run smart matching on initial load and after changes
+  useEffect(() => {
+    if (!loading && Object.keys(people).length > 0) {
+      runSmartMatching();
+    }
+  }, [loading]);
+
   if (loading) {
     return (
       <div className="app">
@@ -1445,6 +1675,7 @@ function App() {
             people={people}
             selectedPerson={selectedPerson}
             onSelectPerson={handleSelectPerson}
+            onMatchClick={handleMatchClick}
           />
         </div>
       </div>
@@ -1483,6 +1714,18 @@ function App() {
         message={`Вы уверены, что хотите удалить ${getFullName(selectedPerson)}? Это действие нельзя отменить.`}
         onConfirm={handleConfirmDelete}
         onCancel={() => setShowConfirmDelete(false)}
+      />
+
+      <MatchVerificationModal
+        isOpen={showMatchModal}
+        person={matchPerson}
+        matches={personMatches}
+        onConfirm={handleConfirmMatch}
+        onClose={() => {
+          setShowMatchModal(false);
+          setMatchPerson(null);
+          setPersonMatches([]);
+        }}
       />
 
       <div className="toast-container">
