@@ -2,7 +2,7 @@
   "people": {
     "me": {
       "id": "me",
-      "name": "Алексей",
+      "name": "Павел",
       "gender": "male",
       "partnerId": null,
       "fatherId": "1762452081793",
@@ -11,16 +11,16 @@
       "lastName": "Слабкий",
       "middleName": "Андреевич",
       "isAlive": true,
-      "birthDate": "2000-04-05",
+      "birthDate": "2002-10-04",
       "birthPlace": "Москва",
       "hasMatch": false,
-      "information": null
+      "information": "Студент магистратуры Центрального Университета"
     },
     "1762452081793": {
       "id": "1762452081793",
-      "name": "Сергей",
-      "lastName": "Иванов",
-      "middleName": "Сергеевич",
+      "name": "Андрей",
+      "lastName": "Слабкий",
+      "middleName": "Антонович",
       "gender": "male",
       "fatherId": "1762452331540",
       "motherId": "1762452331543",
@@ -29,15 +29,15 @@
         "me"
       ],
       "isAlive": true,
-      "birthDate": "1975-12-01",
+      "birthDate": "1973-04-01",
       "birthPlace": "Москва",
       "hasMatch": false,
-      "information": null
+      "information": "Руководитель департамента"
     },
     "1762452081797": {
       "id": "1762452081797",
-      "name": "Наталья",
-      "lastName": "Иванова",
+      "name": "Елена",
+      "lastName": "Еремеева",
       "middleName": "Олеговна",
       "gender": "female",
       "fatherId": "1765224962158",
@@ -47,16 +47,16 @@
         "me"
       ],
       "isAlive": true,
-      "birthDate": "1978-04-20",
+      "birthDate": "1978-05-01",
       "birthPlace": "Москва",
       "hasMatch": false,
-      "information": ""
+      "information": "Врач-кардиолог"
     },
     "1762452331540": {
       "id": "1762452331540",
-      "name": "Сергей",
-      "lastName": "Иванов",
-      "middleName": "Алексеевич",
+      "name": "Антон",
+      "lastName": "Слабкий",
+      "middleName": "Павлович",
       "gender": "male",
       "fatherId": null,
       "motherId": null,
@@ -65,16 +65,16 @@
         "1762452081793"
       ],
       "isAlive": true,
-      "birthDate": "1950-10-10",
+      "birthDate": "1950-12-01",
       "birthPlace": "Москва",
       "hasMatch": false,
-      "information": ""
+      "information": "Работник департамента коммуникаций"
     },
     "1762452331543": {
       "id": "1762452331543",
-      "name": "Анна",
-      "lastName": "Иванова",
-      "middleName": "Романовна",
+      "name": "Нила",
+      "lastName": "Слабкая",
+      "middleName": "Бальтазаровна",
       "gender": "female",
       "fatherId": null,
       "motherId": null,
@@ -83,10 +83,10 @@
         "1762452081793"
       ],
       "isAlive": true,
-      "birthDate": "1952-06-19",
+      "birthDate": "1952-06-01",
       "birthPlace": "Москва",
       "hasMatch": false,
-      "information": ""
+      "information": "Медсестра"
     },
     "1765224962158": {
       "id": "1765224962158",
@@ -103,7 +103,8 @@
       "isAlive": true,
       "birthDate": "1945-01-01",
       "birthPlace": "Москва",
-      "hasMatch": true
+      "hasMatch": true,
+      "information": "Врач-педиатр"
     },
     "1765225015661": {
       "id": "1765225015661",
@@ -121,7 +122,7 @@
       "birthDate": "1945-07-03",
       "birthPlace": "Астана",
       "hasMatch": true,
-      "information": ""
+      "information": "Врач-офтальмолог"
     }
   }
 }

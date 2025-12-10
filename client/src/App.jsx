@@ -1269,16 +1269,32 @@ const PersonCard = ({ person, people, onClose, onEdit, onAddRelative, onDelete, 
 // MATCH VERIFICATION MODAL
 // ============================================
 
-const MatchVerificationModal = ({ isOpen, person, matches, onConfirm, onClose }) => {
+const MatchVerificationModal = ({ 
+  isOpen, 
+  person, 
+  treeMatches = [], 
+  archiveMatches = [], 
+  onConfirmTree, 
+  onConfirmArchive, 
+  onClose 
+}) => {
   const [expandedMatch, setExpandedMatch] = useState(null);
+  const [expandedArchive, setExpandedArchive] = useState(null);
 
   if (!isOpen || !person) return null;
 
   // Sort matches by score descending
-  const sortedMatches = [...(matches || [])].sort((a, b) => b.score - a.score);
+  const sortedTreeMatches = [...(treeMatches || [])].sort((a, b) => b.score - a.score);
+  const sortedArchiveMatches = [...(archiveMatches || [])].sort((a, b) => b.score - a.score);
+
+  const hasAnyMatches = sortedTreeMatches.length > 0 || sortedArchiveMatches.length > 0;
 
   const toggleExpand = (matchIndex) => {
     setExpandedMatch(expandedMatch === matchIndex ? null : matchIndex);
+  };
+
+  const toggleArchiveExpand = (matchIndex) => {
+    setExpandedArchive(expandedArchive === matchIndex ? null : matchIndex);
   };
 
   const getRelativesFromFragment = (match) => {
@@ -1298,105 +1314,195 @@ const MatchVerificationModal = ({ isOpen, person, matches, onConfirm, onClose })
         </div>
         
         <div className="match-modal-body">
-          {sortedMatches.length === 0 ? (
+          {!hasAnyMatches ? (
             <p className="no-matches">Совпадения не найдены</p>
           ) : (
-            sortedMatches.map((match, index) => {
-              const matchedPerson = match.people?.[match.database_id];
-              const relatives = getRelativesFromFragment(match);
-              const isExpanded = expandedMatch === index;
+            <>
+              {/* Tree matches section */}
+              {sortedTreeMatches.length > 0 && (
+                <div className="match-section">
+                  <h4 className="match-section-title">Совпадения с деревьями других пользователей</h4>
+                  {sortedTreeMatches.map((match, index) => {
+                    const matchedPerson = match.people?.[match.database_id];
+                    const relatives = getRelativesFromFragment(match);
+                    const isExpanded = expandedMatch === index;
 
-              return (
-                <div key={index} className="match-card">
-                  <div className="match-comparison">
-                    {/* Current person (left) */}
-                    <div className="match-person current-person">
-                      <h4 className="match-person-title">Ваше дерево</h4>
-                      <div className="match-person-info">
-                        <p className="match-name">{getFullName(person)}</p>
-                        <p className="match-detail">
-                          <Calendar size={14} />
-                          {person.birthDate || 'Не указана'}
-                        </p>
-                        <p className="match-detail">
-                          <MapPin size={14} />
-                          {person.birthPlace || 'Не указано'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Arrow */}
-                    <div className="match-arrow">
-                      <RefreshCw size={24} />
-                    </div>
-
-                    {/* Matched person (right) */}
-                    <div className="match-person found-person">
-                      <h4 className="match-person-title">Найдено в дереве: {match.tree_owner}</h4>
-                      <div className="match-person-info">
-                        <p className="match-name">{matchedPerson ? getFullName(matchedPerson) : 'Неизвестно'}</p>
-                        <p className="match-detail">
-                          <Calendar size={14} />
-                          {matchedPerson?.birthDate || 'Не указана'}
-                        </p>
-                        <p className="match-detail">
-                          <MapPin size={14} />
-                          {matchedPerson?.birthPlace || 'Не указано'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="match-score">
-                    <span className="score-label">Вероятность совпадения:</span>
-                    <span className="score-value">{match.score?.toFixed(1)}%</span>
-                  </div>
-
-                  {/* Expandable relatives list */}
-                  {relatives.length > 0 && (
-                    <div className="match-relatives-section">
-                      <button 
-                        className="match-relatives-toggle"
-                        onClick={() => toggleExpand(index)}
-                      >
-                        <Users size={16} />
-                        <span>Родственники для добавления ({relatives.length})</span>
-                        <ChevronRight 
-                          size={16} 
-                          className={`toggle-icon ${isExpanded ? 'expanded' : ''}`}
-                        />
-                      </button>
-                      
-                      {isExpanded && (
-                        <div className="match-relatives-list">
-                          {relatives.map((relative, relIndex) => (
-                            <div key={relIndex} className="match-relative-item">
-                              <p className="relative-name">{getFullName(relative)}</p>
-                              <p className="relative-detail">
-                                <Calendar size={12} />
-                                {relative.birthDate || 'Не указана'}
+                    return (
+                      <div key={`tree-${index}`} className="match-card">
+                        <div className="match-comparison">
+                          <div className="match-person current-person">
+                            <h4 className="match-person-title">Ваше дерево</h4>
+                            <div className="match-person-info">
+                              <p className="match-name">{getFullName(person)}</p>
+                              <p className="match-detail">
+                                <Calendar size={14} />
+                                {person.birthDate || 'Не указана'}
                               </p>
-                              <p className="relative-detail">
-                                <MapPin size={12} />
-                                {relative.birthPlace || 'Не указано'}
+                              <p className="match-detail">
+                                <MapPin size={14} />
+                                {person.birthPlace || 'Не указано'}
                               </p>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                          </div>
 
-                  <button 
-                    className="btn btn-primary match-confirm-btn"
-                    onClick={() => onConfirm(match)}
-                  >
-                    <Check size={16} />
-                    Подтвердить совпадение
-                  </button>
+                          <div className="match-arrow">
+                            <RefreshCw size={24} />
+                          </div>
+
+                          <div className="match-person found-person">
+                            <h4 className="match-person-title">Дерево: {match.tree_owner}</h4>
+                            <div className="match-person-info">
+                              <p className="match-name">{matchedPerson ? getFullName(matchedPerson) : 'Неизвестно'}</p>
+                              <p className="match-detail">
+                                <Calendar size={14} />
+                                {matchedPerson?.birthDate || 'Не указана'}
+                              </p>
+                              <p className="match-detail">
+                                <MapPin size={14} />
+                                {matchedPerson?.birthPlace || 'Не указано'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="match-score">
+                          <span className="score-label">Вероятность совпадения:</span>
+                          <span className="score-value">{match.score?.toFixed(1)}%</span>
+                        </div>
+
+                        {relatives.length > 0 && (
+                          <div className="match-relatives-section">
+                            <button 
+                              className="match-relatives-toggle"
+                              onClick={() => toggleExpand(index)}
+                            >
+                              <Users size={16} />
+                              <span>Родственники для добавления ({relatives.length})</span>
+                              <ChevronRight 
+                                size={16} 
+                                className={`toggle-icon ${isExpanded ? 'expanded' : ''}`}
+                              />
+                            </button>
+                            
+                            {isExpanded && (
+                              <div className="match-relatives-list">
+                                {relatives.map((relative, relIndex) => (
+                                  <div key={relIndex} className="match-relative-item">
+                                    <p className="relative-name">{getFullName(relative)}</p>
+                                    <p className="relative-detail">
+                                      <Calendar size={12} />
+                                      {relative.birthDate || 'Не указана'}
+                                    </p>
+                                    <p className="relative-detail">
+                                      <MapPin size={12} />
+                                      {relative.birthPlace || 'Не указано'}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <button 
+                          className="btn btn-primary match-confirm-btn"
+                          onClick={() => onConfirmTree(match)}
+                        >
+                          <Check size={16} />
+                          Подтвердить совпадение
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })
+              )}
+
+              {/* Archive matches section */}
+              {sortedArchiveMatches.length > 0 && (
+                <div className="match-section">
+                  <h4 className="match-section-title archive-title">Совпадения с архивом «Память народа»</h4>
+                  {sortedArchiveMatches.map((match, index) => {
+                    const archivePerson = match.person;
+                    const isExpanded = expandedArchive === index;
+
+                    return (
+                      <div key={`archive-${index}`} className="match-card archive-match-card">
+                        <div className="match-comparison">
+                          <div className="match-person current-person">
+                            <h4 className="match-person-title">Ваше дерево</h4>
+                            <div className="match-person-info">
+                              <p className="match-name">{getFullName(person)}</p>
+                              <p className="match-detail">
+                                <Calendar size={14} />
+                                {person.birthDate || 'Не указана'}
+                              </p>
+                              <p className="match-detail">
+                                <MapPin size={14} />
+                                {person.birthPlace || 'Не указано'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="match-arrow archive-arrow">
+                            <RefreshCw size={24} />
+                          </div>
+
+                          <div className="match-person found-person archive-person">
+                            <h4 className="match-person-title">Архив «Память народа»</h4>
+                            <div className="match-person-info">
+                              <p className="match-name">{archivePerson ? getFullName(archivePerson) : 'Неизвестно'}</p>
+                              <p className="match-detail">
+                                <Calendar size={14} />
+                                {archivePerson?.birthDate || 'Не указана'}
+                              </p>
+                              <p className="match-detail">
+                                <MapPin size={14} />
+                                {archivePerson?.birthPlace || 'Не указано'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="match-score archive-score">
+                          <span className="score-label">Вероятность совпадения:</span>
+                          <span className="score-value">{match.score?.toFixed(1)}%</span>
+                        </div>
+
+                        {archivePerson?.information && (
+                          <div className="match-relatives-section">
+                            <button 
+                              className="match-relatives-toggle"
+                              onClick={() => toggleArchiveExpand(index)}
+                            >
+                              <FileText size={16} />
+                              <span>Информация из архива</span>
+                              <ChevronRight 
+                                size={16} 
+                                className={`toggle-icon ${isExpanded ? 'expanded' : ''}`}
+                              />
+                            </button>
+                            
+                            {isExpanded && (
+                              <div className="match-archive-info">
+                                <p className="archive-description">{archivePerson.information}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <button 
+                          className="btn btn-primary match-confirm-btn archive-confirm-btn"
+                          onClick={() => onConfirmArchive(match)}
+                        >
+                          <Check size={16} />
+                          Подтвердить совпадение
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -1420,7 +1526,8 @@ function App() {
   const [toasts, setToasts] = useState([]);
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [matchPerson, setMatchPerson] = useState(null);
-  const [personMatches, setPersonMatches] = useState([]);
+  const [treeMatches, setTreeMatches] = useState([]);
+  const [archiveMatches, setArchiveMatches] = useState([]);
 
   const sidebarNav = [
     { key: 'home', label: 'Главная', icon: Home },
@@ -1597,7 +1704,8 @@ function App() {
       
       if (response.ok) {
         const data = await response.json();
-        setPersonMatches(data.matches || []);
+        setTreeMatches(data.treeMatches || []);
+        setArchiveMatches(data.archiveMatches || []);
         setShowMatchModal(true);
       }
     } catch (error) {
@@ -1606,8 +1714,8 @@ function App() {
     }
   };
 
-  // Handle match confirmation
-  const handleConfirmMatch = async (match) => {
+  // Handle tree match confirmation
+  const handleConfirmTreeMatch = async (match) => {
     try {
       const response = await fetch(`${API_URL}/people/${matchPerson.id}/confirm-match`, {
         method: 'POST',
@@ -1619,13 +1727,44 @@ function App() {
         await fetchPeople();
         setShowMatchModal(false);
         setMatchPerson(null);
-        setPersonMatches([]);
+        setTreeMatches([]);
+        setArchiveMatches([]);
         showToast('Совпадение подтверждено, родственники добавлены');
         // Run smart matching again to find new matches
         await runSmartMatching();
       }
     } catch (error) {
       console.error('Error confirming match:', error);
+      showToast('Ошибка подтверждения', 'error');
+    }
+  };
+
+  // Handle archive match confirmation
+  const handleConfirmArchiveMatch = async (match) => {
+    try {
+      const response = await fetch(`${API_URL}/people/${matchPerson.id}/confirm-archive-match`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        await fetchPeople();
+        // Update selected person if it's the same
+        if (selectedPerson?.id === matchPerson.id) {
+          setSelectedPerson(data.person);
+        }
+        setShowMatchModal(false);
+        setMatchPerson(null);
+        setTreeMatches([]);
+        setArchiveMatches([]);
+        showToast('Информация из архива добавлена');
+        // Run smart matching again
+        await runSmartMatching();
+      }
+    } catch (error) {
+      console.error('Error confirming archive match:', error);
       showToast('Ошибка подтверждения', 'error');
     }
   };
@@ -1719,12 +1858,15 @@ function App() {
       <MatchVerificationModal
         isOpen={showMatchModal}
         person={matchPerson}
-        matches={personMatches}
-        onConfirm={handleConfirmMatch}
+        treeMatches={treeMatches}
+        archiveMatches={archiveMatches}
+        onConfirmTree={handleConfirmTreeMatch}
+        onConfirmArchive={handleConfirmArchiveMatch}
         onClose={() => {
           setShowMatchModal(false);
           setMatchPerson(null);
-          setPersonMatches([]);
+          setTreeMatches([]);
+          setArchiveMatches([]);
         }}
       />
 

@@ -16,21 +16,21 @@
           "isAlive": true,
           "birthDate": "1945-07",
           "birthPlace": "Астана",
-          "information": ""
+          "information": "Тестовое описание"
         },
         "349589283754": {
           "id": "349589283754",
-          "name": "Петр",
-          "lastName": "Еремеев",
-          "middleName": "Андреевич",
+          "name": "Михаил",
+          "lastName": "Авинов",
+          "middleName": "Терентьевич",
           "gender": "male",
           "fatherId": null,
           "motherId": null,
           "partnerId": "9327459872349",
           "children": ["12341324545"],
-          "isAlive": true,
-          "birthDate": "1920-02-01",
-          "birthPlace": "Казахстан",
+          "isAlive": false,
+          "birthDate": "1921",
+          "birthPlace": "Алтайский край",
           "information": ""
         },
         "9327459872349": {
@@ -43,7 +43,7 @@
           "motherId": null,
           "partnerId": "349589283754",
           "children": ["12341324545"],
-          "isAlive": true,
+          "isAlive": false,
           "birthDate": "1920-05-03",
           "birthPlace": "Казахстан",
           "information": ""
@@ -66,7 +66,7 @@
           "isAlive": true,
           "birthDate": "1945-01",
           "birthPlace": "Москва",
-          "information": ""
+          "information": "Тестовое описание"
         },
         "444555666": {
           "id": "444555666",
@@ -81,7 +81,7 @@
           "isAlive": false,
           "birthDate": "1910-01-01",
           "birthPlace": "Казахстан",
-          "information": ""
+          "information": "Тестовое описание"
         },
         "777888999": {
           "id": "777888999",
@@ -96,7 +96,7 @@
           "isAlive": false,
           "birthDate": "1911-01-01",
           "birthPlace": "Казахстан",
-          "information": ""
+          "information": "Тестовое описание"
         }
       }
     }

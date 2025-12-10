@@ -1111,6 +1111,71 @@ body {
   justify-content: center;
 }
 
+/* Match sections */
+.match-section {
+  margin-bottom: 24px;
+}
+
+.match-section:last-child {
+  margin-bottom: 0;
+}
+
+.match-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent-primary);
+}
+
+.match-section-title.archive-title {
+  border-bottom-color: #f59e0b;
+}
+
+/* Archive match specific styles */
+.archive-match-card {
+  border-left: 3px solid #f59e0b;
+}
+
+.archive-arrow {
+  color: #f59e0b;
+}
+
+.archive-score {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.archive-score .score-value {
+  color: #f59e0b;
+}
+
+.archive-confirm-btn {
+  background: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.archive-confirm-btn:hover {
+  background: #d97706;
+  border-color: #d97706;
+}
+
+.match-archive-info {
+  padding: 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+
+.archive-description {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header {

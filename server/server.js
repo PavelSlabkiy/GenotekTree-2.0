@@ -14,7 +14,8 @@ app.use(express.json());
 // Path to data files
 const DATA_FILE = path.join(__dirname, '..', 'data.json');
 const DATABASE_FILE = path.join(__dirname, '..', 'database.json');
-const SMART_MATCHING_SCRIPT = path.join(__dirname, '..', 'smart-matching.py');
+const SMART_MATCHING_SCRIPT = path.join(__dirname, '..', 'smart_matching.py');
+const PAMYAT_NARODA_SCRIPT = path.join(__dirname, '..', 'pamyat_naroda.py');
 
 // Helper functions
 const readData = () => {
@@ -85,6 +86,54 @@ const runSmartMatching = (dataJson, databaseJson) => {
     const input = JSON.stringify({
       data: JSON.stringify(dataJson),
       db: JSON.stringify(databaseJson)
+    });
+    python.stdin.write(input);
+    python.stdin.end();
+  });
+};
+
+// Run pamyat-naroda Python script (with longer timeout for archive search)
+const runPamyatNaroda = (dataJson) => {
+  return new Promise((resolve, reject) => {
+    const python = spawn('python3', [PAMYAT_NARODA_SCRIPT], {
+      timeout: 60000 // 60 second timeout for archive search
+    });
+    
+    let stdout = '';
+    let stderr = '';
+    
+    python.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+    
+    python.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    
+    python.on('close', (code) => {
+      if (code !== 0) {
+        console.error('Pamyat Naroda stderr:', stderr);
+        // Return empty result instead of rejecting (archive might be unavailable)
+        resolve({ matches: [], matchedDataIds: [] });
+        return;
+      }
+      try {
+        const result = JSON.parse(stdout);
+        resolve(result);
+      } catch (e) {
+        console.error('Failed to parse pamyat naroda output:', stdout);
+        resolve({ matches: [], matchedDataIds: [] });
+      }
+    });
+    
+    python.on('error', (err) => {
+      console.error('Pamyat Naroda error:', err);
+      resolve({ matches: [], matchedDataIds: [] });
+    });
+    
+    // Send input to Python script
+    const input = JSON.stringify({
+      data: JSON.stringify(dataJson)
     });
     python.stdin.write(input);
     python.stdin.end();
@@ -374,37 +423,44 @@ app.get('/api/people/:id/family', (req, res) => {
   res.json(familyInfo);
 });
 
-// Smart matching endpoint
+// Combined matching endpoint (smart-matching + pamyat-naroda)
 app.post('/api/smart-matching', async (req, res) => {
   try {
     const data = readData();
     const database = readDatabase();
     
-    const result = await runSmartMatching(data, database);
+    // Run both searches in parallel
+    const [smartResult, archiveResult] = await Promise.all([
+      runSmartMatching(data, database),
+      runPamyatNaroda(data)
+    ]);
     
-    // Filter matches to only include those with actual relatives to add
-    // (more than just the matched person in the fragment)
-    const validMatches = (result.matches || []).filter(match => {
+    // Filter smart matches to only include those with actual relatives to add
+    const validTreeMatches = (smartResult.matches || []).filter(match => {
       if (!match.people) return false;
       const fragmentPeopleCount = Object.keys(match.people).length;
-      // Only valid if there are more people in fragment than just the matched person
       return fragmentPeopleCount > 1;
     });
     
-    // Get IDs of people with valid matches (that have relatives to add)
-    const matchedIdsWithRelatives = [...new Set(validMatches.map(m => m.data_id))];
+    // Archive matches are already filtered (only people without information)
+    const validArchiveMatches = archiveResult.matches || [];
     
-    // Reset all hasMatch flags first, then set true only for people with valid matches
+    // Combine matched IDs from both sources
+    const treeMatchedIds = [...new Set(validTreeMatches.map(m => m.data_id))];
+    const archiveMatchedIds = archiveResult.matchedDataIds || [];
+    const allMatchedIds = [...new Set([...treeMatchedIds, ...archiveMatchedIds])];
+    
+    // Reset all hasMatch flags, then set true for people with any valid matches
     Object.keys(data.people).forEach(id => {
-      data.people[id].hasMatch = matchedIdsWithRelatives.includes(id);
+      data.people[id].hasMatch = allMatchedIds.includes(id);
     });
     
     writeData(data);
     
-    // Return only valid matches
     res.json({
-      matches: validMatches,
-      matchedDataIds: matchedIdsWithRelatives
+      treeMatches: validTreeMatches,
+      archiveMatches: validArchiveMatches,
+      matchedDataIds: allMatchedIds
     });
   } catch (error) {
     console.error('Smart matching error:', error);
@@ -412,7 +468,7 @@ app.post('/api/smart-matching', async (req, res) => {
   }
 });
 
-// Get matches for a specific person
+// Get matches for a specific person (both tree and archive)
 app.get('/api/people/:id/matches', async (req, res) => {
   try {
     const data = readData();
@@ -423,17 +479,28 @@ app.get('/api/people/:id/matches', async (req, res) => {
       return res.status(404).json({ error: 'Person not found' });
     }
     
-    const result = await runSmartMatching(data, database);
+    // Run both searches in parallel
+    const [smartResult, archiveResult] = await Promise.all([
+      runSmartMatching(data, database),
+      runPamyatNaroda(data)
+    ]);
     
-    // Filter matches for this specific person AND only include those with relatives to add
-    const personMatches = (result.matches || []).filter(m => {
+    // Filter tree matches for this person with relatives to add
+    const personTreeMatches = (smartResult.matches || []).filter(m => {
       if (m.data_id !== personId) return false;
       if (!m.people) return false;
-      // Only valid if there are more people in fragment than just the matched person
       return Object.keys(m.people).length > 1;
     });
     
-    res.json({ matches: personMatches });
+    // Filter archive matches for this person
+    const personArchiveMatches = (archiveResult.matches || []).filter(m => 
+      m.data_id === personId
+    );
+    
+    res.json({ 
+      treeMatches: personTreeMatches,
+      archiveMatches: personArchiveMatches
+    });
   } catch (error) {
     console.error('Get matches error:', error);
     res.status(500).json({ error: 'Failed to get matches', details: error.message });
@@ -516,6 +583,44 @@ app.post('/api/people/:id/confirm-match', (req, res) => {
   
   if (writeData(data)) {
     res.json({ success: true, message: 'Match confirmed and relatives added', people: data.people });
+  } else {
+    res.status(500).json({ error: 'Failed to save data' });
+  }
+});
+
+// Confirm archive match (add information to person's card)
+app.post('/api/people/:id/confirm-archive-match', (req, res) => {
+  const data = readData();
+  const personId = req.params.id;
+  const person = data.people[personId];
+  const { match } = req.body; // Contains the archive match with person data
+  
+  if (!person) {
+    return res.status(404).json({ error: 'Person not found' });
+  }
+  
+  if (!match || !match.person) {
+    return res.status(400).json({ error: 'Invalid archive match data' });
+  }
+  
+  // Update person's information with archive data
+  person.information = match.person.information || '';
+  
+  // Optionally update other fields if they're empty
+  if (!person.birthDate && match.person.birthDate) {
+    person.birthDate = match.person.birthDate;
+  }
+  if (!person.birthPlace && match.person.birthPlace) {
+    person.birthPlace = match.person.birthPlace;
+  }
+  
+  // Reset hasMatch flag (check if there are still other matches)
+  person.hasMatch = false;
+  
+  data.people[personId] = person;
+  
+  if (writeData(data)) {
+    res.json({ success: true, message: 'Archive information added', person: person });
   } else {
     res.status(500).json({ error: 'Failed to save data' });
   }
