@@ -99,13 +99,48 @@ class PamyatNarodaParser:
 
     def summarize_information(self, information):
         try:
-            client = genai.Client(api_key="AIzaSyAfQwyHAmXCGfFFo7uandhgyvSjWi46GyY")
-            resp = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=f"Преобразуй формальную запись в короткую человеческую фразу на русском: {information}"
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": "Bearer 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",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "meta-llama/llama-3.3-70b-instruct:free",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "Ты — модель, преобразующая формальные записи в короткие человеческие фразы."
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Преобразуй формальную запись в короткую человеческую фразу на русском: {information}"
+                        }
+                    ]
+                },
+                timeout=15  # чтобы не зависать бесконечно
             )
-            return resp.text
+
+            # Если сервер вернул ошибку
+            response.raise_for_status()
+
+            data = response.json()
+
+            # Безопасно достаём ответ модели
+            return (
+                data.get("choices", [{}])[0]
+                    .get("message", {})
+                    .get("content", information)
+            )
+
+        except requests.exceptions.RequestException as e:
+            # Ошибки сети, таймауты, проблемы с DNS и т.п.
+            print(f"[summarize_information] Request error: {e}")
+            return information
+
         except Exception as e:
+            # Любые другие сбои, чтобы код не падал
+            print(f"[summarize_information] Unexpected error: {e}")
             return information
 
     def compare_persons(self, person1, person2):
