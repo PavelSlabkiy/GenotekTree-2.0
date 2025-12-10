@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   User, 
   Calendar, 
@@ -23,7 +23,13 @@ import {
   RefreshCw,
   TreePine,
   ChevronRight,
-  Users
+  Users,
+  Plus,
+  Minus,
+  Search,
+  Download,
+  Navigation,
+  MoreHorizontal
 } from 'lucide-react';
 
 const API_URL = '/api';
@@ -631,11 +637,41 @@ const PersonNode = ({ person, position, isSelected, onClick, onMatchClick }) => 
 // FAMILY TREE COMPONENT
 // ============================================
 
-const FamilyTree = ({ people, selectedPerson, onSelectPerson, onMatchClick }) => {
+const FamilyTree = ({ people, selectedPerson, onSelectPerson, onMatchClick, zoom, pan, onPanChange }) => {
   const layout = useMemo(() => {
     const engine = new TreeLayoutEngine(people);
     return engine.getLayout();
   }, [people]);
+
+  const containerRef = useRef(null);
+  const isPanning = useRef(false);
+  const lastMousePos = useRef({ x: 0, y: 0 });
+
+  const handleMouseDown = (e) => {
+    // Left mouse button for panning
+    if (e.button === 0) {
+      isPanning.current = true;
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isPanning.current && onPanChange) {
+      const deltaX = e.clientX - lastMousePos.current.x;
+      const deltaY = e.clientY - lastMousePos.current.y;
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+      onPanChange(prev => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }));
+    }
+  };
+
+  const handleMouseUp = (e) => {
+    if (e.button === 0) {
+      isPanning.current = false;
+    }
+  };
 
   const peopleArray = Object.values(people);
 
@@ -651,34 +687,45 @@ const FamilyTree = ({ people, selectedPerson, onSelectPerson, onMatchClick }) =>
 
   return (
     <div 
-      className="tree-canvas" 
-      style={{ 
-        width: layout.canvasWidth, 
-        height: layout.canvasHeight
-      }}
+      ref={containerRef}
+      className="tree-viewport"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={() => { isPanning.current = false; }}
     >
-      <TreeConnectors 
-        people={people}
-        positions={layout.positions}
-        width={layout.canvasWidth}
-        height={layout.canvasHeight}
-      />
-      <div className="tree-nodes">
-        {peopleArray.map(person => {
-          const position = layout.positions.get(person.id);
-          if (!position) return null;
+      <div 
+        className="tree-canvas" 
+        style={{ 
+          width: layout.canvasWidth, 
+          height: layout.canvasHeight,
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: 'center center'
+        }}
+      >
+        <TreeConnectors 
+          people={people}
+          positions={layout.positions}
+          width={layout.canvasWidth}
+          height={layout.canvasHeight}
+        />
+        <div className="tree-nodes">
+          {peopleArray.map(person => {
+            const position = layout.positions.get(person.id);
+            if (!position) return null;
 
-          return (
-            <PersonNode
-              key={person.id}
-              person={person}
-              position={position}
-              isSelected={selectedPerson?.id === person.id}
-              onClick={onSelectPerson}
-              onMatchClick={onMatchClick}
-            />
-          );
-        })}
+            return (
+              <PersonNode
+                key={person.id}
+                person={person}
+                position={position}
+                isSelected={selectedPerson?.id === person.id}
+                onClick={onSelectPerson}
+                onMatchClick={onMatchClick}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -1462,6 +1509,21 @@ function App() {
   const [matchPerson, setMatchPerson] = useState(null);
   const [treeMatches, setTreeMatches] = useState([]);
   const [archiveMatches, setArchiveMatches] = useState([]);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev + 0.1, 2));
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev - 0.1, 0.3));
+  };
+
+  const handleCenterTree = () => {
+    setPan({ x: 0, y: 0 });
+    setZoom(1);
+  };
 
   const sidebarNav = [
     { key: 'home', label: 'Главная', icon: Home },
@@ -1749,7 +1811,35 @@ function App() {
             selectedPerson={selectedPerson}
             onSelectPerson={handleSelectPerson}
             onMatchClick={handleMatchClick}
+            zoom={zoom}
+            pan={pan}
+            onPanChange={setPan}
           />
+        </div>
+
+        {/* Right Toolbar */}
+        <div className="right-toolbar">
+          <button className="toolbar-btn" title="Профиль">
+            <User size={18} />
+          </button>
+          <button className="toolbar-btn" title="Поиск">
+            <Search size={18} />
+          </button>
+          <button className="toolbar-btn" title="Где я" onClick={handleCenterTree}>
+            <Navigation size={18} />
+          </button>
+          <button className="toolbar-btn" title="Скачать">
+            <Download size={18} />
+          </button>
+          <button className="toolbar-btn" title="Другое">
+            <MoreHorizontal size={18} />
+          </button>
+          <button className="toolbar-btn" title="Приблизить" onClick={handleZoomIn}>
+            <Plus size={18} />
+          </button>
+          <button className="toolbar-btn" title="Отдалить" onClick={handleZoomOut}>
+            <Minus size={18} />
+          </button>
         </div>
       </div>
 
