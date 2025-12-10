@@ -81,18 +81,15 @@ class TreeLayoutEngine {
       const person = this.people[personId];
       if (!person) return 0;
 
-      // Get all children
       const children = (person.children || [])
         .map(id => this.people[id])
         .filter(Boolean);
 
       if (children.length === 0) {
-        // Leaf node - generation 0
         this.generations.set(personId, 0);
         return 0;
       }
 
-      // Generation is 1 + max of children's generations
       let maxChildGen = 0;
       children.forEach(child => {
         maxChildGen = Math.max(maxChildGen, getGeneration(child.id, new Set(visited)));
@@ -103,10 +100,9 @@ class TreeLayoutEngine {
       return gen;
     };
 
-    // First pass - calculate based on children
     people.forEach(p => getGeneration(p.id));
 
-    // Ensure partners are on the same generation (take the higher one)
+    // Ensure partners are on the same generation
     people.forEach(person => {
       if (person.partnerId && this.people[person.partnerId]) {
         const personGen = this.generations.get(person.id) || 0;
@@ -117,7 +113,7 @@ class TreeLayoutEngine {
       }
     });
 
-    // Also check parent relationships to ensure consistency
+    // Check parent relationships
     people.forEach(person => {
       const father = person.fatherId ? this.people[person.fatherId] : null;
       const mother = person.motherId ? this.people[person.motherId] : null;
@@ -137,7 +133,7 @@ class TreeLayoutEngine {
       }
     });
 
-    // Final pass - ensure partners match after parent adjustments
+    // Final pass - ensure partners match
     people.forEach(person => {
       if (person.partnerId && this.people[person.partnerId]) {
         const personGen = this.generations.get(person.id) || 0;
@@ -149,269 +145,208 @@ class TreeLayoutEngine {
     });
   }
 
-  // Get children of a person (or couple)
-  getChildren(person1, person2 = null) {
-    const childrenIds = new Set(person1?.children || []);
-    if (person2) {
-      (person2.children || []).forEach(id => childrenIds.add(id));
-    }
-    
-    return Array.from(childrenIds)
-      .map(id => this.people[id])
-      .filter(Boolean)
-      .sort((a, b) => {
-        if (a.birthDate && b.birthDate) {
-          return new Date(a.birthDate) - new Date(b.birthDate);
-        }
-        return 0;
-      });
-  }
-
-  // Get parents of a person
-  getParents(person) {
-    const parents = [];
-    if (person.fatherId && this.people[person.fatherId]) {
-      parents.push(this.people[person.fatherId]);
-    }
-    if (person.motherId && this.people[person.motherId]) {
-      parents.push(this.people[person.motherId]);
-    }
-    return parents;
-  }
-
-  // Calculate the width needed for a couple (or single person with ancestors)
-  getCoupleWidth(person1, person2 = null) {
-    if (person2) {
-      // Couple width is at least the two cards plus gap
-      return CARD_WIDTH * 2 + COUPLE_GAP;
-    }
-    return CARD_WIDTH;
-  }
-
-  // Calculate the full tree width needed (ancestors + descendants) for a person
-  getFullTreeWidth(personId, visited = new Set()) {
+  // Calculate width needed for a person's ancestor subtree
+  getSubtreeWidth(personId, visited = new Set()) {
     if (visited.has(personId)) return CARD_WIDTH;
     visited.add(personId);
 
     const person = this.people[personId];
     if (!person) return CARD_WIDTH;
 
-    // Get partner for couple width
-    const partner = person.partnerId ? this.people[person.partnerId] : null;
-    const coupleWidth = this.getCoupleWidth(person, partner);
-    
-    if (partner) {
-      visited.add(partner.id);
-    }
-
-    // Calculate ancestor width
     const father = person.fatherId ? this.people[person.fatherId] : null;
     const mother = person.motherId ? this.people[person.motherId] : null;
-    
-    let ancestorWidth = coupleWidth;
+
+    // If person has both parents, we need width for both parent subtrees
     if (father && mother) {
-      // Need space for both parents' full trees
-      const fatherWidth = this.getFullTreeWidth(father.id, new Set(visited));
-      const motherWidth = this.getFullTreeWidth(mother.id, new Set(visited));
-      ancestorWidth = Math.max(ancestorWidth, fatherWidth + HORIZONTAL_GAP + motherWidth);
-    } else if (father || mother) {
-      const parentWidth = this.getFullTreeWidth((father || mother).id, new Set(visited));
-      ancestorWidth = Math.max(ancestorWidth, parentWidth);
+      const fatherSubtree = this.getSubtreeWidth(father.id, new Set(visited));
+      const motherSubtree = this.getSubtreeWidth(mother.id, new Set(visited));
+      return fatherSubtree + HORIZONTAL_GAP + motherSubtree;
+    } else if (father) {
+      return this.getSubtreeWidth(father.id, new Set(visited));
+    } else if (mother) {
+      return this.getSubtreeWidth(mother.id, new Set(visited));
     }
 
-    // Calculate descendant width (for partner's ancestors too)
-    let partnerAncestorWidth = 0;
-    if (partner) {
-      const partnerFather = partner.fatherId ? this.people[partner.fatherId] : null;
-      const partnerMother = partner.motherId ? this.people[partner.motherId] : null;
-      
-      if (partnerFather && partnerMother) {
-        const pFatherWidth = this.getFullTreeWidth(partnerFather.id, new Set(visited));
-        const pMotherWidth = this.getFullTreeWidth(partnerMother.id, new Set(visited));
-        partnerAncestorWidth = pFatherWidth + HORIZONTAL_GAP + pMotherWidth;
-      } else if (partnerFather || partnerMother) {
-        partnerAncestorWidth = this.getFullTreeWidth((partnerFather || partnerMother).id, new Set(visited));
-      }
-    }
-
-    // Total width is max of own ancestors + partner ancestors (since they're side by side)
-    return Math.max(ancestorWidth + (partnerAncestorWidth > 0 ? HORIZONTAL_GAP + partnerAncestorWidth : 0), coupleWidth);
+    return CARD_WIDTH;
   }
 
-  // Main layout calculation - TOP-DOWN approach
+  // Position ancestors recursively (going UP the tree)
+  positionAncestors(personId, personX, maxGen) {
+    const person = this.people[personId];
+    if (!person) return;
+
+    const gen = this.generations.get(personId);
+    const father = person.fatherId ? this.people[person.fatherId] : null;
+    const mother = person.motherId ? this.people[person.motherId] : null;
+
+    if (!father && !mother) return;
+
+    const parentY = (maxGen - gen - 1) * (CARD_HEIGHT + VERTICAL_GAP) + PADDING;
+
+    if (father && mother) {
+      // Both parents - position them as a couple centered above the child
+      // Calculate subtree widths for each parent
+      const fatherSubtreeWidth = this.getSubtreeWidth(father.id, new Set([personId]));
+      const motherSubtreeWidth = this.getSubtreeWidth(mother.id, new Set([personId]));
+
+      // Father's center should be at personX - offset
+      // Mother's center should be at personX + offset
+      // The offset is calculated so each parent is centered over their subtree
+      
+      const fatherX = personX - fatherSubtreeWidth / 2;
+      const motherX = personX + motherSubtreeWidth / 2;
+
+      // Ensure minimum gap between parents
+      const actualGap = motherX - fatherX;
+      if (actualGap < CARD_WIDTH + COUPLE_GAP) {
+        const adjustment = (CARD_WIDTH + COUPLE_GAP - actualGap) / 2;
+        const adjustedFatherX = fatherX - adjustment;
+        const adjustedMotherX = motherX + adjustment;
+        
+        if (!this.positions.has(father.id)) {
+          this.positions.set(father.id, { x: adjustedFatherX, y: parentY });
+          this.positionAncestors(father.id, adjustedFatherX, maxGen);
+        }
+        if (!this.positions.has(mother.id)) {
+          this.positions.set(mother.id, { x: adjustedMotherX, y: parentY });
+          this.positionAncestors(mother.id, adjustedMotherX, maxGen);
+        }
+      } else {
+        if (!this.positions.has(father.id)) {
+          this.positions.set(father.id, { x: fatherX, y: parentY });
+          this.positionAncestors(father.id, fatherX, maxGen);
+        }
+        if (!this.positions.has(mother.id)) {
+          this.positions.set(mother.id, { x: motherX, y: parentY });
+          this.positionAncestors(mother.id, motherX, maxGen);
+        }
+      }
+    } else if (father) {
+      // Only father - position directly above
+      if (!this.positions.has(father.id)) {
+        this.positions.set(father.id, { x: personX, y: parentY });
+        this.positionAncestors(father.id, personX, maxGen);
+      }
+    } else if (mother) {
+      // Only mother - position directly above
+      if (!this.positions.has(mother.id)) {
+        this.positions.set(mother.id, { x: personX, y: parentY });
+        this.positionAncestors(mother.id, personX, maxGen);
+      }
+    }
+  }
+
+  // Main layout calculation
   calculateLayout() {
     this.calculateGenerations();
 
     const people = Object.values(this.people);
     if (people.length === 0) return;
 
-    // Group by generation
-    const generationGroups = new Map();
-    this.generations.forEach((gen, personId) => {
-      if (!generationGroups.has(gen)) {
-        generationGroups.set(gen, new Set());
-      }
-      generationGroups.get(gen).add(personId);
-    });
-
     const maxGen = Math.max(...Array.from(this.generations.values()));
-    const positioned = new Set();
+    const minGen = Math.min(...Array.from(this.generations.values()));
 
-    // STEP 1: Find and position the oldest generation (roots) first
-    const oldestGenPeople = Array.from(generationGroups.get(maxGen) || [])
-      .map(id => this.people[id])
-      .filter(Boolean);
+    // Find youngest generation people (focal points)
+    const youngestPeople = people.filter(p => this.generations.get(p.id) === minGen);
 
-    let currentX = PADDING;
-    const topY = PADDING;
+    // Group youngest into couples/singles
+    const processedYoungest = new Set();
+    const youngestUnits = [];
 
-    // Group oldest generation into couples
-    const processedOldest = new Set();
-    const oldestUnits = [];
+    youngestPeople.forEach(person => {
+      if (processedYoungest.has(person.id)) return;
 
-    oldestGenPeople.forEach(person => {
-      if (processedOldest.has(person.id)) return;
-      
       const partner = person.partnerId ? this.people[person.partnerId] : null;
-      const partnerSameGen = partner && this.generations.get(partner.id) === maxGen;
+      const partnerSameGen = partner && this.generations.get(partner.id) === minGen;
 
-      if (partnerSameGen && !processedOldest.has(partner.id)) {
-        oldestUnits.push({ type: 'couple', person1: person, person2: partner });
-        processedOldest.add(person.id);
-        processedOldest.add(partner.id);
-      } else if (!processedOldest.has(person.id)) {
-        oldestUnits.push({ type: 'single', person: person });
-        processedOldest.add(person.id);
+      if (partnerSameGen && !processedYoungest.has(partner.id)) {
+        youngestUnits.push({ type: 'couple', person1: person, person2: partner });
+        processedYoungest.add(person.id);
+        processedYoungest.add(partner.id);
+      } else {
+        youngestUnits.push({ type: 'single', person: person });
+        processedYoungest.add(person.id);
       }
     });
 
-    // Position oldest generation units
-    oldestUnits.forEach((unit, index) => {
+    // Calculate total width needed and position youngest generation
+    let currentX = PADDING;
+    const youngestY = maxGen * (CARD_HEIGHT + VERTICAL_GAP) + PADDING;
+
+    youngestUnits.forEach((unit, index) => {
       if (index > 0) currentX += HORIZONTAL_GAP * 2;
-      
+
       if (unit.type === 'couple') {
         const { person1, person2 } = unit;
-        const coupleWidth = CARD_WIDTH * 2 + COUPLE_GAP;
-        const centerX = currentX + coupleWidth / 2;
         
-        this.positions.set(person1.id, { x: centerX - COUPLE_GAP / 2 - CARD_WIDTH / 2, y: topY });
-        this.positions.set(person2.id, { x: centerX + COUPLE_GAP / 2 + CARD_WIDTH / 2, y: topY });
-        positioned.add(person1.id);
-        positioned.add(person2.id);
-        currentX += coupleWidth;
+        // Calculate subtree widths
+        const p1SubtreeWidth = this.getSubtreeWidth(person1.id, new Set());
+        const p2SubtreeWidth = this.getSubtreeWidth(person2.id, new Set([person1.id]));
+        
+        const totalWidth = Math.max(
+          p1SubtreeWidth + HORIZONTAL_GAP + p2SubtreeWidth,
+          CARD_WIDTH * 2 + COUPLE_GAP
+        );
+
+        // Position person1 centered over their subtree (left side)
+        const p1X = currentX + p1SubtreeWidth / 2;
+        // Position person2 centered over their subtree (right side)  
+        const p2X = currentX + p1SubtreeWidth + HORIZONTAL_GAP + p2SubtreeWidth / 2;
+
+        this.positions.set(person1.id, { x: p1X, y: youngestY });
+        this.positions.set(person2.id, { x: p2X, y: youngestY });
+
+        // Position ancestors for each
+        this.positionAncestors(person1.id, p1X, maxGen);
+        this.positionAncestors(person2.id, p2X, maxGen);
+
+        currentX += totalWidth;
       } else {
-        this.positions.set(unit.person.id, { x: currentX + CARD_WIDTH / 2, y: topY });
-        positioned.add(unit.person.id);
-        currentX += CARD_WIDTH;
+        const person = unit.person;
+        const subtreeWidth = this.getSubtreeWidth(person.id, new Set());
+        const personX = currentX + subtreeWidth / 2;
+
+        this.positions.set(person.id, { x: personX, y: youngestY });
+        this.positionAncestors(person.id, personX, maxGen);
+        
+        currentX += subtreeWidth;
       }
     });
 
-    // STEP 2: Position each lower generation centered below their parents
-    for (let gen = maxGen - 1; gen >= 0; gen--) {
+    // Resolve any overlaps that might have occurred
+    for (let gen = minGen; gen <= maxGen; gen++) {
       const genY = (maxGen - gen) * (CARD_HEIGHT + VERTICAL_GAP) + PADDING;
-      const genPeople = Array.from(generationGroups.get(gen) || [])
-        .map(id => this.people[id])
-        .filter(Boolean);
+      this.resolveOverlaps(genY);
+    }
+  }
 
-      // Group into couples first
-      const processedInGen = new Set();
-      const units = [];
+  // Resolve overlapping positions in a generation
+  resolveOverlaps(genY) {
+    const genPeople = Array.from(this.positions.entries())
+      .filter(([id, pos]) => Math.abs(pos.y - genY) < 1)
+      .sort((a, b) => a[1].x - b[1].x);
 
-      genPeople.forEach(person => {
-        if (processedInGen.has(person.id)) return;
-        
-        const partner = person.partnerId ? this.people[person.partnerId] : null;
-        const partnerSameGen = partner && this.generations.get(partner.id) === gen;
+    for (let i = 1; i < genPeople.length; i++) {
+      const [prevId, prevPos] = genPeople[i - 1];
+      const [currId, currPos] = genPeople[i];
 
-        if (partnerSameGen && !processedInGen.has(partner.id)) {
-          units.push({ type: 'couple', person1: person, person2: partner });
-          processedInGen.add(person.id);
-          processedInGen.add(partner.id);
-        } else if (!processedInGen.has(person.id)) {
-          units.push({ type: 'single', person: person });
-          processedInGen.add(person.id);
+      // Check if they are partners - allow closer spacing for couples
+      const prevPerson = this.people[prevId];
+      const currPerson = this.people[currId];
+      const arePartners = prevPerson?.partnerId === currId || currPerson?.partnerId === prevId;
+      
+      const minDistance = arePartners ? CARD_WIDTH + COUPLE_GAP : CARD_WIDTH + HORIZONTAL_GAP;
+      const actualDistance = currPos.x - prevPos.x;
+
+      if (actualDistance < minDistance) {
+        const shift = minDistance - actualDistance;
+        // Shift current and all subsequent positions to the right
+        for (let j = i; j < genPeople.length; j++) {
+          const [shiftId, shiftPos] = genPeople[j];
+          this.positions.set(shiftId, { x: shiftPos.x + shift, y: shiftPos.y });
         }
-      });
-
-      // Position each unit
-      units.forEach(unit => {
-        if (unit.type === 'couple') {
-          const { person1, person2 } = unit;
-          if (positioned.has(person1.id) && positioned.has(person2.id)) return;
-
-          // Find parents for person1 and person2
-          const p1Father = person1.fatherId ? this.people[person1.fatherId] : null;
-          const p1Mother = person1.motherId ? this.people[person1.motherId] : null;
-          const p2Father = person2.fatherId ? this.people[person2.fatherId] : null;
-          const p2Mother = person2.motherId ? this.people[person2.motherId] : null;
-
-          // Calculate position based on parents
-          let person1X, person2X;
-
-          if ((p1Father || p1Mother) && positioned.has((p1Father || p1Mother).id)) {
-            // Person1 has positioned parents - center under them
-            const parentPositions = [p1Father, p1Mother]
-              .filter(p => p && positioned.has(p.id))
-              .map(p => this.positions.get(p.id).x);
-            person1X = parentPositions.reduce((a, b) => a + b, 0) / parentPositions.length;
-          }
-
-          if ((p2Father || p2Mother) && positioned.has((p2Father || p2Mother).id)) {
-            // Person2 has positioned parents - center under them
-            const parentPositions = [p2Father, p2Mother]
-              .filter(p => p && positioned.has(p.id))
-              .map(p => this.positions.get(p.id).x);
-            person2X = parentPositions.reduce((a, b) => a + b, 0) / parentPositions.length;
-          }
-
-          // If both have parent positions, use them; otherwise estimate
-          if (person1X !== undefined && person2X !== undefined) {
-            // Ensure minimum couple gap
-            if (person2X - person1X < CARD_WIDTH + COUPLE_GAP) {
-              const midX = (person1X + person2X) / 2;
-              person1X = midX - COUPLE_GAP / 2 - CARD_WIDTH / 2;
-              person2X = midX + COUPLE_GAP / 2 + CARD_WIDTH / 2;
-            }
-            this.positions.set(person1.id, { x: person1X, y: genY });
-            this.positions.set(person2.id, { x: person2X, y: genY });
-          } else if (person1X !== undefined) {
-            this.positions.set(person1.id, { x: person1X, y: genY });
-            this.positions.set(person2.id, { x: person1X + CARD_WIDTH + COUPLE_GAP, y: genY });
-          } else if (person2X !== undefined) {
-            this.positions.set(person1.id, { x: person2X - CARD_WIDTH - COUPLE_GAP, y: genY });
-            this.positions.set(person2.id, { x: person2X, y: genY });
-          } else {
-            // No parents positioned, place based on current max X
-            let maxX = PADDING;
-            this.positions.forEach(pos => maxX = Math.max(maxX, pos.x + CARD_WIDTH / 2));
-            this.positions.set(person1.id, { x: maxX + HORIZONTAL_GAP + CARD_WIDTH / 2, y: genY });
-            this.positions.set(person2.id, { x: maxX + HORIZONTAL_GAP + CARD_WIDTH * 1.5 + COUPLE_GAP, y: genY });
-          }
-
-          positioned.add(person1.id);
-          positioned.add(person2.id);
-        } else {
-          const person = unit.person;
-          if (positioned.has(person.id)) return;
-
-          const father = person.fatherId ? this.people[person.fatherId] : null;
-          const mother = person.motherId ? this.people[person.motherId] : null;
-
-          if ((father || mother) && positioned.has((father || mother).id)) {
-            const parentPositions = [father, mother]
-              .filter(p => p && positioned.has(p.id))
-              .map(p => this.positions.get(p.id).x);
-            const centerX = parentPositions.reduce((a, b) => a + b, 0) / parentPositions.length;
-            this.positions.set(person.id, { x: centerX, y: genY });
-          } else {
-            let maxX = PADDING;
-            this.positions.forEach(pos => maxX = Math.max(maxX, pos.x + CARD_WIDTH / 2));
-            this.positions.set(person.id, { x: maxX + HORIZONTAL_GAP + CARD_WIDTH / 2, y: genY });
-          }
-
-          positioned.add(person.id);
-        }
-      });
+        genPeople[i] = [currId, { x: currPos.x + shift, y: currPos.y }];
+      }
     }
   }
 
@@ -423,7 +358,7 @@ class TreeLayoutEngine {
       return { positions: new Map(), canvasWidth: PADDING * 2, canvasHeight: PADDING * 2 };
     }
 
-    // Normalize positions to ensure no negative values and proper padding
+    // Normalize positions
     let minX = Infinity;
     let minY = Infinity;
     
@@ -443,7 +378,6 @@ class TreeLayoutEngine {
       });
     });
 
-    // Calculate canvas size
     let maxX = 0;
     let maxY = 0;
     
