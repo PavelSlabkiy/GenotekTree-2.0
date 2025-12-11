@@ -620,13 +620,17 @@ const PersonNode = ({ person, position, isSelected, onClick, onMatchClick }) => 
       onClick={() => onClick(person)}
     >
       {person.hasMatch && (
-        <button 
-          className="match-indicator"
-          onClick={handleMatchClick}
-          title="Найдено совпадение"
-        >
-          <RefreshCw size={14} />
-        </button>
+        <div className="match-indicator-wrapper">
+          <button 
+            className="match-indicator"
+            onClick={handleMatchClick}
+          >
+            <RefreshCw size={14} />
+          </button>
+          <div className="match-tooltip">
+            SmartMatching — позволяет находить ваших родственников в деревьях других людей и архивных данных.
+          </div>
+        </div>
       )}
       <div className="person-avatar">
         <User size={20} />

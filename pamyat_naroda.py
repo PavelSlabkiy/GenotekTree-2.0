@@ -1,7 +1,6 @@
 import requests
 import json
 import sys
-import google.generativeai as genai
 from bs4 import BeautifulSoup
 from smart_matching import SmartMatching
 
