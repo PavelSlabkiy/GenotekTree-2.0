@@ -1689,6 +1689,9 @@ function App() {
   // Use refs for matches to ensure synchronous access
   const allTreeMatchesRef = useRef([]);
   const allArchiveMatchesRef = useRef([]);
+  const [showMatchFoundNotification, setShowMatchFoundNotification] = useState(false);
+  const [showSmartMatchingTutorial, setShowSmartMatchingTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(1);
 
   const handleZoomIn = () => {
     setZoom(prev => Math.min(prev + 0.1, 2));
@@ -1711,6 +1714,26 @@ function App() {
   const handleGrantAccess = (treeId) => {
     setGrantedAccessIds(prev => [...prev, treeId]);
     showToast('Доступ к дереву получен');
+  };
+
+  const handleMatchNotificationClick = () => {
+    setShowMatchFoundNotification(false);
+    setTutorialStep(1);
+    setShowSmartMatchingTutorial(true);
+  };
+
+  const handleTutorialNext = () => {
+    if (tutorialStep < 3) {
+      setTutorialStep(prev => prev + 1);
+    } else {
+      setShowSmartMatchingTutorial(false);
+      setTutorialStep(1);
+    }
+  };
+
+  const handleTutorialClose = () => {
+    setShowSmartMatchingTutorial(false);
+    setTutorialStep(1);
   };
 
   const sidebarNav = [
@@ -1888,6 +1911,17 @@ function App() {
         // Store all matches in refs for synchronous access when clicking the match icon
         allTreeMatchesRef.current = data.treeMatches || [];
         allArchiveMatchesRef.current = data.archiveMatches || [];
+        
+        // Show notification if any matches found
+        const hasAnyMatches = (data.treeMatches?.length > 0) || (data.archiveMatches?.length > 0);
+        if (hasAnyMatches) {
+          setShowMatchFoundNotification(true);
+          // Auto-hide after 5 seconds
+          setTimeout(() => {
+            setShowMatchFoundNotification(false);
+          }, 5000);
+        }
+        
         await fetchPeople(); // Refresh to get updated hasMatch flags
       }
     } catch (error) {
@@ -2155,6 +2189,84 @@ function App() {
         grantedAccessIds={grantedAccessIds}
         onGrantAccess={handleGrantAccess}
       />
+
+      {/* SmartMatching Found Notification */}
+      {showMatchFoundNotification && (
+        <div 
+          className="smartmatching-notification"
+          onClick={handleMatchNotificationClick}
+        >
+          <div className="smartmatching-notification-icon">
+            <RefreshCw size={20} />
+          </div>
+          <div className="smartmatching-notification-content">
+            <p className="smartmatching-notification-title">Мы нашли ваших родственников</p>
+            <p className="smartmatching-notification-subtitle">Нажмите для подробностей</p>
+          </div>
+        </div>
+      )}
+
+      {/* SmartMatching Tutorial Modal */}
+      {showSmartMatchingTutorial && (
+        <div className="modal-overlay smartmatching-tutorial-overlay" onClick={handleTutorialClose}>
+          <div className="smartmatching-tutorial-modal" onClick={e => e.stopPropagation()}>
+            <button className="smartmatching-tutorial-close" onClick={handleTutorialClose}>
+              <X size={20} />
+            </button>
+            
+            <div className="smartmatching-tutorial-header">
+              <h3>SmartMatching</h3>
+              <span className="smartmatching-tutorial-step">Шаг {tutorialStep} из 3</span>
+            </div>
+
+            <div className="smartmatching-tutorial-body">
+              <div className="smartmatching-tutorial-text">
+                {tutorialStep === 1 && (
+                  <p>SmartMatching позволяет находить ваших родственников в деревьях других людей и архивных данных. Расширяйте ваше древо одним нажатием.</p>
+                )}
+                {tutorialStep === 2 && (
+                  <p>Мы уделяем особое внимание защите персональных данных наших клиентов. Для добавления родственников из другого древа необходимо запросить доступ у владельца.</p>
+                )}
+                {tutorialStep === 3 && (
+                  <p>Сейчас вам доступно добавление информации о родственниках из архивных данных. Для расширения древа за счёт ваших родственников в других деревьях необходимо оформить подписку SmartMatching.</p>
+                )}
+              </div>
+              
+              <div className="smartmatching-tutorial-image">
+                <img 
+                  src={`/assets/instruction_${tutorialStep}.gif`} 
+                  alt={`Инструкция шаг ${tutorialStep}`}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = `<div class="tutorial-image-placeholder"><span>Шаг ${tutorialStep}</span></div>`;
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="smartmatching-tutorial-footer">
+              <div className="smartmatching-tutorial-dots">
+                {[1, 2, 3].map(step => (
+                  <span 
+                    key={step} 
+                    className={`tutorial-dot ${tutorialStep === step ? 'active' : ''}`}
+                  />
+                ))}
+              </div>
+              <button 
+                className="smartmatching-tutorial-next"
+                onClick={handleTutorialNext}
+              >
+                {tutorialStep === 3 ? (
+                  'Приступить'
+                ) : (
+                  <ChevronRight size={24} />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="toast-container">
         {toasts.map(toast => (

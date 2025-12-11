@@ -112,8 +112,8 @@
       "lastName": "Еремеева",
       "middleName": "Петровна",
       "gender": "female",
-      "fatherId": "1765477368277vg8r",
-      "motherId": "1765477368277m0ba",
+      "fatherId": null,
+      "motherId": null,
       "partnerId": "1765224962158",
       "children": [
         "1762452081797"
@@ -121,44 +121,8 @@
       "isAlive": true,
       "birthDate": "1945-07-03",
       "birthPlace": "Астана",
-      "hasMatch": false,
+      "hasMatch": true,
       "information": "Врач-офтальмолог"
-    },
-    "1765477368277vg8r": {
-      "id": "1765477368277vg8r",
-      "name": "Михаил",
-      "lastName": "Авинов",
-      "middleName": "Терентьевич",
-      "gender": "male",
-      "fatherId": null,
-      "motherId": null,
-      "partnerId": "1765477368277m0ba",
-      "children": [
-        "1765225015661"
-      ],
-      "isAlive": false,
-      "birthDate": "1921",
-      "birthPlace": "Алтайский край",
-      "information": "",
-      "hasMatch": true
-    },
-    "1765477368277m0ba": {
-      "id": "1765477368277m0ba",
-      "name": "Елена",
-      "lastName": "Еремеева",
-      "middleName": "Олеговна",
-      "gender": "female",
-      "fatherId": null,
-      "motherId": null,
-      "partnerId": "1765477368277vg8r",
-      "children": [
-        "1765225015661"
-      ],
-      "isAlive": false,
-      "birthDate": "1920-05-03",
-      "birthPlace": "Казахстан",
-      "information": "",
-      "hasMatch": false
     }
   }
 }
