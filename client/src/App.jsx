@@ -32,7 +32,8 @@ import {
   MoreHorizontal,
   Lock,
   Send,
-  CreditCard
+  CreditCard,
+  Bell
 } from 'lucide-react';
 
 const API_URL = '/api';
@@ -1679,6 +1680,11 @@ function App() {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [hasSubscription, setHasSubscription] = useState(false);
   const [grantedAccessIds, setGrantedAccessIds] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  // Use refs for matches to ensure synchronous access
+  const allTreeMatchesRef = useRef([]);
+  const allArchiveMatchesRef = useRef([]);
 
   const handleZoomIn = () => {
     setZoom(prev => Math.min(prev + 0.1, 2));
@@ -1733,14 +1739,25 @@ function App() {
     fetchPeople();
   }, [fetchPeople]);
 
-  // Toast helper
+  // Toast helper - also adds to notifications
   const showToast = (message, type = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
+    // Add to notifications (only for success messages)
+    if (type === 'success') {
+      setNotifications(prev => [
+        { id, message, timestamp: new Date(), type },
+        ...prev
+      ]);
+    }
   };
 
   const removeToast = (id) => {
     setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
   };
 
   // Handle person selection
@@ -1863,6 +1880,10 @@ function App() {
       });
       
       if (response.ok) {
+        const data = await response.json();
+        // Store all matches in refs for synchronous access when clicking the match icon
+        allTreeMatchesRef.current = data.treeMatches || [];
+        allArchiveMatchesRef.current = data.archiveMatches || [];
         await fetchPeople(); // Refresh to get updated hasMatch flags
       }
     } catch (error) {
@@ -1871,21 +1892,16 @@ function App() {
   };
 
   // Handle match icon click - open match modal
-  const handleMatchClick = async (person) => {
-    try {
-      setMatchPerson(person);
-      const response = await fetch(`${API_URL}/people/${person.id}/matches`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setTreeMatches(data.treeMatches || []);
-        setArchiveMatches(data.archiveMatches || []);
-        setShowMatchModal(true);
-      }
-    } catch (error) {
-      console.error('Error getting matches:', error);
-      showToast('Ошибка загрузки совпадений', 'error');
-    }
+  const handleMatchClick = (person) => {
+    setMatchPerson(person);
+    // Filter stored matches for this specific person (instant, no API call)
+    // Convert both to strings to avoid type mismatch
+    const personId = String(person.id);
+    const personTreeMatches = allTreeMatchesRef.current.filter(m => String(m.data_id) === personId);
+    const personArchiveMatches = allArchiveMatchesRef.current.filter(m => String(m.data_id) === personId);
+    setTreeMatches(personTreeMatches);
+    setArchiveMatches(personArchiveMatches);
+    setShowMatchModal(true);
   };
 
   // Handle tree match confirmation
@@ -1950,6 +1966,17 @@ function App() {
     }
   }, [loading]);
 
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showNotifications && !e.target.closest('.notifications-wrapper')) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showNotifications]);
+
   if (loading) {
     return (
       <div className="app">
@@ -2000,6 +2027,55 @@ function App() {
           <button className="toolbar-btn" title="Профиль">
             <User size={18} />
           </button>
+          <div className="notifications-wrapper">
+            <button 
+              className="toolbar-btn" 
+              title="Уведомления"
+              onClick={() => setShowNotifications(!showNotifications)}
+            >
+              <Bell size={18} />
+              {notifications.length > 0 && (
+                <span className="notification-badge">{notifications.length}</span>
+              )}
+            </button>
+            {showNotifications && (
+              <div className="notifications-panel">
+                <div className="notifications-header">
+                  <h4>Уведомления</h4>
+                  {notifications.length > 0 && (
+                    <button 
+                      className="clear-notifications-btn"
+                      onClick={clearNotifications}
+                    >
+                      Очистить
+                    </button>
+                  )}
+                </div>
+                <div className="notifications-list">
+                  {notifications.length === 0 ? (
+                    <p className="no-notifications">Нет уведомлений</p>
+                  ) : (
+                    notifications.map(notification => (
+                      <div key={notification.id} className="notification-item">
+                        <div className="notification-icon">
+                          <Check size={14} />
+                        </div>
+                        <div className="notification-content">
+                          <p className="notification-message">{notification.message}</p>
+                          <span className="notification-time">
+                            {notification.timestamp.toLocaleTimeString('ru-RU', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <button className="toolbar-btn" title="Поиск">
             <Search size={18} />
           </button>
