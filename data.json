@@ -8,10 +8,10 @@
       "fatherId": "1762452081793",
       "motherId": "1762452081797",
       "children": [],
-      "lastName": "Слабкий",
+      "lastName": "Иванов",
       "middleName": "Андреевич",
       "isAlive": true,
-      "birthDate": "2002-10-04",
+      "birthDate": "2002-10-01",
       "birthPlace": "Москва",
       "hasMatch": false,
       "information": "Студент магистратуры Центрального Университета"
@@ -19,7 +19,7 @@
     "1762452081793": {
       "id": "1762452081793",
       "name": "Андрей",
-      "lastName": "Слабкий",
+      "lastName": "Иванов",
       "middleName": "Антонович",
       "gender": "male",
       "fatherId": "1762452331540",
@@ -37,7 +37,7 @@
     "1762452081797": {
       "id": "1762452081797",
       "name": "Елена",
-      "lastName": "Еремеева",
+      "lastName": "Василькова",
       "middleName": "Олеговна",
       "gender": "female",
       "fatherId": "1765224962158",
@@ -55,7 +55,7 @@
     "1762452331540": {
       "id": "1762452331540",
       "name": "Антон",
-      "lastName": "Слабкий",
+      "lastName": "Иванов",
       "middleName": "Павлович",
       "gender": "male",
       "fatherId": null,
@@ -73,7 +73,7 @@
     "1762452331543": {
       "id": "1762452331543",
       "name": "Нила",
-      "lastName": "Слабкая",
+      "lastName": "Иванова",
       "middleName": "Бальтазаровна",
       "gender": "female",
       "fatherId": null,
@@ -91,7 +91,7 @@
     "1765224962158": {
       "id": "1765224962158",
       "name": "Олег",
-      "lastName": "Еремеев",
+      "lastName": "Васильков",
       "middleName": "Геннадьевич",
       "gender": "male",
       "fatherId": null,
@@ -109,7 +109,7 @@
     "1765225015661": {
       "id": "1765225015661",
       "name": "Анастасия",
-      "lastName": "Еремеева",
+      "lastName": "Авинова",
       "middleName": "Петровна",
       "gender": "female",
       "fatherId": null,

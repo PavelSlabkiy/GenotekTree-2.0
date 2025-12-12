@@ -1,12 +1,12 @@
 {
   "tree_id": {
     "tree001": {
-      "tree_owner": "Иванов Иван Иванович",
+      "tree_owner": "Авинов Иван Иванович",
       "people": {
         "12341324545": {
           "id": "12341324545",
           "name": "Анастасия",
-          "lastName": "Еремеева",
+          "lastName": "Авинова",
           "middleName": "Петровна",
           "gender": "female",
           "fatherId": "349589283754",
@@ -36,7 +36,7 @@
         "9327459872349": {
           "id": "9327459872349",
           "name": "Елена",
-          "lastName": "Еремеева",
+          "lastName": "Авинова",
           "middleName": "Олеговна",
           "gender": "female",
           "fatherId": null,
@@ -51,12 +51,12 @@
       }
     },
     "tree002": {
-      "tree_owner": "Петров Петр Петрович",
+      "tree_owner": "Васильков Петр Петрович",
       "people": {
         "111222333": {
           "id": "111222333",
           "name": "Олег",
-          "lastName": "Еремеев",
+          "lastName": "Васильков",
           "middleName": "Геннадьевич",
           "gender": "male",
           "fatherId": "444555666",
@@ -71,7 +71,7 @@
         "444555666": {
           "id": "444555666",
           "name": "Василий",
-          "lastName": "Еремеев",
+          "lastName": "Васильков",
           "middleName": "Евпатьевич",
           "gender": "male",
           "fatherId": null,
@@ -86,7 +86,7 @@
         "777888999": {
           "id": "777888999",
           "name": "Алена",
-          "lastName": "Еремеева",
+          "lastName": "Василькова",
           "middleName": "Антоновна",
           "gender": "female",
           "fatherId": null,
