@@ -1299,13 +1299,13 @@ const BalancePanel = ({ balance, onAddBalance, onClose }) => {
     <>
       <div className="balance-panel">
         <div className="balance-header">
-          <h4>SmartMatch баланс</h4>
+          <h4>Баланс</h4>
         </div>
         <div className="balance-content">
           <div className="balance-amount">
             <Coins size={24} />
             <span className="balance-value">{balance}</span>
-            <span className="balance-label">совпадений</span>
+            <span className="balance-label">SmartMatch</span>
           </div>
           <button 
             className="btn btn-primary balance-replenish-btn"
@@ -1324,7 +1324,7 @@ const BalancePanel = ({ balance, onAddBalance, onClose }) => {
               <div className="payment-success">
                 <Check size={48} className="success-icon" />
                 <h3>Оплата прошла успешно!</h3>
-                <p>Добавлено {selectedPlan === 'package' ? 10 : quantity} совпадений</p>
+                <p>Добавлено {selectedPlan === 'package' ? 10 : quantity} SmartMatch</p>
               </div>
             ) : (
               <>
@@ -1341,7 +1341,7 @@ const BalancePanel = ({ balance, onAddBalance, onClose }) => {
                       <h4>Базовый</h4>
                       <span className="plan-price">{basicPrice} ₽</span>
                     </div>
-                    <p className="plan-desc">за 1 совпадение</p>
+                    <p className="plan-desc">за 1 SmartMatch</p>
                     <div className="plan-quantity">
                       <button 
                         className="quantity-btn"
@@ -1378,7 +1378,7 @@ const BalancePanel = ({ balance, onAddBalance, onClose }) => {
                       <h4>Пакет</h4>
                       <span className="plan-price">{packagePrice} ₽</span>
                     </div>
-                    <p className="plan-desc">за 10 совпадений</p>
+                    <p className="plan-desc">за 10 SmartMatch</p>
                     <p className="plan-savings">Экономия {10 * basicPrice - packagePrice} ₽</p>
                     <div className="plan-total">
                       <strong>{packagePrice} ₽</strong>
@@ -1433,6 +1433,7 @@ const MatchVerificationModal = ({
   const [expandedMatch, setExpandedMatch] = useState(null);
   const [expandedArchive, setExpandedArchive] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showConfirmPurchaseModal, setShowConfirmPurchaseModal] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [currentRequestMatch, setCurrentRequestMatch] = useState(null);
   const [requestMessage, setRequestMessage] = useState('');
@@ -1467,20 +1468,32 @@ const MatchVerificationModal = ({
   const handleRequestAccess = (match) => {
     const relatives = getRelativesFromFragment(match);
     const relativesCount = relatives.length;
+    setCurrentRequestMatch(match);
+    setRequiredMatches(relativesCount);
     
     if (smartMatchBalance >= relativesCount) {
-      // Sufficient balance - proceed with request
-      setCurrentRequestMatch(match);
-      setRequestMessage(`Здравствуйте, ${match.tree_owner}! Я хотел бы получить доступ к данным вашего семейного древа.`);
-      setShowRequestModal(true);
+      // Sufficient balance - show confirmation modal
+      setShowConfirmPurchaseModal(true);
     } else {
-      // Insufficient balance - show payment modal
-      setCurrentRequestMatch(match);
-      setRequiredMatches(relativesCount);
+      // Insufficient balance - show payment modal first
       setBasicQuantity(relativesCount);
       setSelectedPlan('basic');
       setShowPaymentModal(true);
     }
+  };
+
+  const handleConfirmPurchase = () => {
+    setShowConfirmPurchaseModal(false);
+    // Proceed to request modal
+    if (currentRequestMatch) {
+      setRequestMessage(`Здравствуйте, ${currentRequestMatch.tree_owner}! Я хотел бы получить доступ к данным вашего семейного древа.`);
+      setShowRequestModal(true);
+    }
+  };
+
+  const handleCancelPurchase = () => {
+    setShowConfirmPurchaseModal(false);
+    setCurrentRequestMatch(null);
   };
 
   const handleBuyMatches = async () => {
@@ -1499,10 +1512,9 @@ const MatchVerificationModal = ({
     setShowPaymentModal(false);
     onAddBalance(matchesToAdd);
     
-    // Now open request modal if we came from a match request
+    // Now show confirmation modal if we came from a match request
     if (currentRequestMatch) {
-      setRequestMessage(`Здравствуйте, ${currentRequestMatch.tree_owner}! Я хотел бы получить доступ к данным вашего семейного древа.`);
-      setShowRequestModal(true);
+      setShowConfirmPurchaseModal(true);
     }
   };
 
@@ -1538,7 +1550,7 @@ const MatchVerificationModal = ({
             <div className="payment-success">
               <Check size={48} className="success-icon" />
               <h3>Оплата прошла успешно!</h3>
-              <p>Добавлено {selectedPlan === 'package' ? 10 : basicQuantity} совпадений</p>
+              <p>Добавлено {selectedPlan === 'package' ? 10 : basicQuantity} SmartMatch</p>
             </div>
           ) : (
             <>
@@ -1548,7 +1560,7 @@ const MatchVerificationModal = ({
               </div>
               {requiredMatches > 1 && (
                 <p className="payment-notice">
-                  Для добавления родственников требуется минимум {requiredMatches} совпадений
+                  Для добавления родственников требуется минимум {requiredMatches} SmartMatch
                 </p>
               )}
               <div className="payment-plans">
@@ -1560,7 +1572,7 @@ const MatchVerificationModal = ({
                     <h4>Базовый</h4>
                     <span className="plan-price">{basicPrice} ₽</span>
                   </div>
-                  <p className="plan-desc">за 1 совпадение</p>
+                  <p className="plan-desc">за 1 SmartMatch</p>
                   <div className="plan-quantity">
                     <button 
                       className="quantity-btn"
@@ -1597,7 +1609,7 @@ const MatchVerificationModal = ({
                     <h4>Пакет</h4>
                     <span className="plan-price">{packagePrice} ₽</span>
                   </div>
-                  <p className="plan-desc">за 10 совпадений</p>
+                  <p className="plan-desc">за 10 SmartMatch</p>
                   <p className="plan-savings">Экономия {10 * basicPrice - packagePrice} ₽</p>
                   <div className="plan-total">
                     <strong>{packagePrice} ₽</strong>
@@ -1624,6 +1636,44 @@ const MatchVerificationModal = ({
               </button>
             </>
           )}
+        </div>
+      </div>
+    );
+  };
+
+  // Confirm Purchase Modal
+  const ConfirmPurchaseModal = () => {
+    const relatives = currentRequestMatch ? getRelativesFromFragment(currentRequestMatch) : [];
+    const relativesCount = relatives.length;
+
+    return (
+      <div className="modal-overlay confirm-purchase-modal" onClick={handleCancelPurchase}>
+        <div className="modal-content confirm-purchase-content" onClick={e => e.stopPropagation()}>
+          <div className="confirm-purchase-header">
+            <Coins size={32} className="confirm-purchase-icon" />
+            <h3>Подтверждение</h3>
+          </div>
+          <p className="confirm-purchase-text">
+            Вы хотите добавить <strong>{relativesCount}</strong> {relativesCount === 1 ? 'родственника' : relativesCount < 5 ? 'родственников' : 'родственников'} за <strong>{relativesCount} SmartMatch</strong>?
+          </p>
+          <p className="confirm-purchase-balance">
+            Текущий баланс: <strong>{smartMatchBalance}</strong> SmartMatch
+          </p>
+          <div className="confirm-purchase-actions">
+            <button 
+              className="btn btn-secondary"
+              onClick={handleCancelPurchase}
+            >
+              Отмена
+            </button>
+            <button 
+              className="btn btn-primary"
+              onClick={handleConfirmPurchase}
+            >
+              <Check size={16} />
+              Подтвердить
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1895,6 +1945,7 @@ const MatchVerificationModal = ({
       </div>
 
       {showPaymentModal && <PaymentModal />}
+      {showConfirmPurchaseModal && <ConfirmPurchaseModal />}
       {showRequestModal && <RequestModal />}
     </>
   );
@@ -1951,7 +2002,7 @@ function App() {
 
   const handleAddBalance = (amount) => {
     setSmartMatchBalance(prev => prev + amount);
-    showToast(`Баланс пополнен на ${amount} совпадений`);
+    showToast(`Баланс пополнен на ${amount} SmartMatch`);
   };
 
   const handleSpendBalance = (amount) => {
