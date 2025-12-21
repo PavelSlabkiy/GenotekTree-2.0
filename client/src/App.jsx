@@ -1928,9 +1928,13 @@ function App() {
   // Use refs for matches to ensure synchronous access
   const allTreeMatchesRef = useRef([]);
   const allArchiveMatchesRef = useRef([]);
-  const [showMatchFoundNotification, setShowMatchFoundNotification] = useState(false);
   const [showSmartMatchingTutorial, setShowSmartMatchingTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(1);
+
+  // Show notification as long as there are any unconfirmed matches (people with hasMatch = true)
+  const showMatchFoundNotification = useMemo(() => {
+    return Object.values(people).some(person => person.hasMatch);
+  }, [people]);
 
   const handleZoomIn = () => {
     setZoom(prev => Math.min(prev + 0.1, 2));
@@ -1960,7 +1964,6 @@ function App() {
   };
 
   const handleMatchNotificationClick = () => {
-    setShowMatchFoundNotification(false);
     setTutorialStep(1);
     setShowSmartMatchingTutorial(true);
   };
@@ -2154,16 +2157,6 @@ function App() {
         // Store all matches in refs for synchronous access when clicking the match icon
         allTreeMatchesRef.current = data.treeMatches || [];
         allArchiveMatchesRef.current = data.archiveMatches || [];
-        
-        // Show notification if any matches found
-        const hasAnyMatches = (data.treeMatches?.length > 0) || (data.archiveMatches?.length > 0);
-        if (hasAnyMatches) {
-          setShowMatchFoundNotification(true);
-          // Auto-hide after 5 seconds
-          setTimeout(() => {
-            setShowMatchFoundNotification(false);
-          }, 5000);
-        }
         
         await fetchPeople(); // Refresh to get updated hasMatch flags
       }
