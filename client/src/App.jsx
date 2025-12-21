@@ -33,7 +33,8 @@ import {
   Lock,
   Send,
   CreditCard,
-  Bell
+  Bell,
+  Coins
 } from 'lucide-react';
 
 const API_URL = '/api';
@@ -1267,6 +1268,151 @@ const PersonCard = ({ person, people, onClose, onEdit, onAddRelative, onDelete, 
 };
 
 // ============================================
+// BALANCE PANEL
+// ============================================
+
+const BalancePanel = ({ balance, onAddBalance, onClose }) => {
+  const [showReplenishModal, setShowReplenishModal] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [selectedPlan, setSelectedPlan] = useState('basic');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const basicPrice = 210;
+  const packagePrice = 1600;
+
+  const handleBuy = async () => {
+    setIsProcessing(true);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsProcessing(false);
+    setShowSuccess(true);
+    
+    const matchesToAdd = selectedPlan === 'package' ? 10 : quantity;
+    
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setShowSuccess(false);
+    setShowReplenishModal(false);
+    onAddBalance(matchesToAdd);
+  };
+
+  return (
+    <>
+      <div className="balance-panel">
+        <div className="balance-header">
+          <h4>SmartMatch баланс</h4>
+        </div>
+        <div className="balance-content">
+          <div className="balance-amount">
+            <Coins size={24} />
+            <span className="balance-value">{balance}</span>
+            <span className="balance-label">совпадений</span>
+          </div>
+          <button 
+            className="btn btn-primary balance-replenish-btn"
+            onClick={() => setShowReplenishModal(true)}
+          >
+            <Plus size={16} />
+            Пополнить
+          </button>
+        </div>
+      </div>
+
+      {showReplenishModal && (
+        <div className="modal-overlay payment-modal" onClick={() => !isProcessing && setShowReplenishModal(false)}>
+          <div className="modal-content payment-content" onClick={e => e.stopPropagation()}>
+            {showSuccess ? (
+              <div className="payment-success">
+                <Check size={48} className="success-icon" />
+                <h3>Оплата прошла успешно!</h3>
+                <p>Добавлено {selectedPlan === 'package' ? 10 : quantity} совпадений</p>
+              </div>
+            ) : (
+              <>
+                <div className="payment-header">
+                  <CreditCard size={32} className="payment-icon" />
+                  <h3>Пополнение баланса</h3>
+                </div>
+                <div className="payment-plans">
+                  <div 
+                    className={`payment-plan ${selectedPlan === 'basic' ? 'selected' : ''}`}
+                    onClick={() => setSelectedPlan('basic')}
+                  >
+                    <div className="plan-header">
+                      <h4>Базовый</h4>
+                      <span className="plan-price">{basicPrice} ₽</span>
+                    </div>
+                    <p className="plan-desc">за 1 совпадение</p>
+                    <div className="plan-quantity">
+                      <button 
+                        className="quantity-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setQuantity(prev => Math.max(1, prev - 1));
+                        }}
+                        disabled={quantity <= 1}
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <span className="quantity-value">{quantity}</span>
+                      <button 
+                        className="quantity-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setQuantity(prev => prev + 1);
+                        }}
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    <div className="plan-total">
+                      Итого: <strong>{quantity * basicPrice} ₽</strong>
+                    </div>
+                  </div>
+
+                  <div 
+                    className={`payment-plan package ${selectedPlan === 'package' ? 'selected' : ''}`}
+                    onClick={() => setSelectedPlan('package')}
+                  >
+                    <div className="plan-badge">Выгодно</div>
+                    <div className="plan-header">
+                      <h4>Пакет</h4>
+                      <span className="plan-price">{packagePrice} ₽</span>
+                    </div>
+                    <p className="plan-desc">за 10 совпадений</p>
+                    <p className="plan-savings">Экономия {10 * basicPrice - packagePrice} ₽</p>
+                    <div className="plan-total">
+                      <strong>{packagePrice} ₽</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  className="btn btn-primary payment-btn"
+                  onClick={handleBuy}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="btn-spinner" />
+                      Обработка...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard size={16} />
+                      Оплатить {selectedPlan === 'package' ? packagePrice : quantity * basicPrice} ₽
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+// ============================================
 // MATCH VERIFICATION MODAL
 // ============================================
 
@@ -1278,19 +1424,23 @@ const MatchVerificationModal = ({
   onConfirmTree, 
   onConfirmArchive, 
   onClose,
-  hasSubscription,
-  onSubscribe,
+  smartMatchBalance,
+  onAddBalance,
+  onSpendBalance,
   grantedAccessIds,
   onGrantAccess
 }) => {
   const [expandedMatch, setExpandedMatch] = useState(null);
   const [expandedArchive, setExpandedArchive] = useState(null);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [currentRequestMatch, setCurrentRequestMatch] = useState(null);
   const [requestMessage, setRequestMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [requiredMatches, setRequiredMatches] = useState(1);
+  const [selectedPlan, setSelectedPlan] = useState('basic');
+  const [basicQuantity, setBasicQuantity] = useState(1);
 
   if (!isOpen || !person) return null;
 
@@ -1315,30 +1465,41 @@ const MatchVerificationModal = ({
   };
 
   const handleRequestAccess = (match) => {
-    if (!hasSubscription) {
-      setShowSubscriptionModal(true);
-      setCurrentRequestMatch(match);
-    } else {
+    const relatives = getRelativesFromFragment(match);
+    const relativesCount = relatives.length;
+    
+    if (smartMatchBalance >= relativesCount) {
+      // Sufficient balance - proceed with request
       setCurrentRequestMatch(match);
       setRequestMessage(`Здравствуйте, ${match.tree_owner}! Я хотел бы получить доступ к данным вашего семейного древа.`);
       setShowRequestModal(true);
+    } else {
+      // Insufficient balance - show payment modal
+      setCurrentRequestMatch(match);
+      setRequiredMatches(relativesCount);
+      setBasicQuantity(relativesCount);
+      setSelectedPlan('basic');
+      setShowPaymentModal(true);
     }
   };
 
-  const handleBuySubscription = async () => {
+  const handleBuyMatches = async () => {
     setIsProcessing(true);
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 2000));
     setIsProcessing(false);
     setShowPaymentSuccess(true);
     
-    // After showing success, subscribe and close
+    // Calculate matches to add
+    const matchesToAdd = selectedPlan === 'package' ? 10 : basicQuantity;
+    
+    // After showing success, add balance and close
     await new Promise(resolve => setTimeout(resolve, 1500));
     setShowPaymentSuccess(false);
-    setShowSubscriptionModal(false);
-    onSubscribe();
+    setShowPaymentModal(false);
+    onAddBalance(matchesToAdd);
     
-    // Now open request modal
+    // Now open request modal if we came from a match request
     if (currentRequestMatch) {
       setRequestMessage(`Здравствуйте, ${currentRequestMatch.tree_owner}! Я хотел бы получить доступ к данным вашего семейного древа.`);
       setShowRequestModal(true);
@@ -1352,6 +1513,8 @@ const MatchVerificationModal = ({
     setIsProcessing(false);
     
     if (currentRequestMatch) {
+      const relatives = getRelativesFromFragment(currentRequestMatch);
+      onSpendBalance(relatives.length);
       onGrantAccess(currentRequestMatch.tree_id);
     }
     setShowRequestModal(false);
@@ -1362,46 +1525,109 @@ const MatchVerificationModal = ({
     return grantedAccessIds?.includes(match.tree_id);
   };
 
-  // Subscription Modal
-  const SubscriptionModal = () => (
-    <div className="modal-overlay subscription-modal" onClick={() => !isProcessing && setShowSubscriptionModal(false)}>
-      <div className="modal-content subscription-content" onClick={e => e.stopPropagation()}>
-        {showPaymentSuccess ? (
-          <div className="payment-success">
-            <Check size={48} className="success-icon" />
-            <h3>Оплата прошла успешно!</h3>
-          </div>
-        ) : (
-          <>
-            <div className="subscription-header">
-              <CreditCard size={32} className="subscription-icon" />
-              <h3>Требуется подписка</h3>
+  // Payment Modal with rates
+  const PaymentModal = () => {
+    const basicPrice = 210;
+    const packagePrice = 1600;
+    const basicTotal = basicQuantity * basicPrice;
+
+    return (
+      <div className="modal-overlay payment-modal" onClick={() => !isProcessing && setShowPaymentModal(false)}>
+        <div className="modal-content payment-content" onClick={e => e.stopPropagation()}>
+          {showPaymentSuccess ? (
+            <div className="payment-success">
+              <Check size={48} className="success-icon" />
+              <h3>Оплата прошла успешно!</h3>
+              <p>Добавлено {selectedPlan === 'package' ? 10 : basicQuantity} совпадений</p>
             </div>
-            <p className="subscription-text">
-              Для использования SmartMatching необходимо приобрести подписку
-            </p>
-            <button 
-              className="btn btn-primary subscription-btn"
-              onClick={handleBuySubscription}
-              disabled={isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <div className="btn-spinner" />
-                  Обработка...
-                </>
-              ) : (
-                <>
-                  <CreditCard size={16} />
-                  Купить
-                </>
+          ) : (
+            <>
+              <div className="payment-header">
+                <CreditCard size={32} className="payment-icon" />
+                <h3>Пополнение баланса</h3>
+              </div>
+              {requiredMatches > 1 && (
+                <p className="payment-notice">
+                  Для добавления родственников требуется минимум {requiredMatches} совпадений
+                </p>
               )}
-            </button>
-          </>
-        )}
+              <div className="payment-plans">
+                <div 
+                  className={`payment-plan ${selectedPlan === 'basic' ? 'selected' : ''}`}
+                  onClick={() => setSelectedPlan('basic')}
+                >
+                  <div className="plan-header">
+                    <h4>Базовый</h4>
+                    <span className="plan-price">{basicPrice} ₽</span>
+                  </div>
+                  <p className="plan-desc">за 1 совпадение</p>
+                  <div className="plan-quantity">
+                    <button 
+                      className="quantity-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBasicQuantity(prev => Math.max(requiredMatches || 1, prev - 1));
+                      }}
+                      disabled={basicQuantity <= (requiredMatches || 1)}
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="quantity-value">{basicQuantity}</span>
+                    <button 
+                      className="quantity-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBasicQuantity(prev => prev + 1);
+                      }}
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                  <div className="plan-total">
+                    Итого: <strong>{basicTotal} ₽</strong>
+                  </div>
+                </div>
+
+                <div 
+                  className={`payment-plan package ${selectedPlan === 'package' ? 'selected' : ''}`}
+                  onClick={() => setSelectedPlan('package')}
+                >
+                  <div className="plan-badge">Выгодно</div>
+                  <div className="plan-header">
+                    <h4>Пакет</h4>
+                    <span className="plan-price">{packagePrice} ₽</span>
+                  </div>
+                  <p className="plan-desc">за 10 совпадений</p>
+                  <p className="plan-savings">Экономия {10 * basicPrice - packagePrice} ₽</p>
+                  <div className="plan-total">
+                    <strong>{packagePrice} ₽</strong>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                className="btn btn-primary payment-btn"
+                onClick={handleBuyMatches}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="btn-spinner" />
+                    Обработка...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard size={16} />
+                    Оплатить {selectedPlan === 'package' ? packagePrice : basicTotal} ₽
+                  </>
+                )}
+              </button>
+            </>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Request Access Modal
   const RequestModal = () => (
@@ -1668,7 +1894,7 @@ const MatchVerificationModal = ({
         </div>
       </div>
 
-      {showSubscriptionModal && <SubscriptionModal />}
+      {showPaymentModal && <PaymentModal />}
       {showRequestModal && <RequestModal />}
     </>
   );
@@ -1694,10 +1920,11 @@ function App() {
   const [archiveMatches, setArchiveMatches] = useState([]);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [hasSubscription, setHasSubscription] = useState(false);
+  const [smartMatchBalance, setSmartMatchBalance] = useState(0);
   const [grantedAccessIds, setGrantedAccessIds] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showBalancePanel, setShowBalancePanel] = useState(false);
   // Use refs for matches to ensure synchronous access
   const allTreeMatchesRef = useRef([]);
   const allArchiveMatchesRef = useRef([]);
@@ -1718,9 +1945,13 @@ function App() {
     setZoom(1);
   };
 
-  const handleSubscribe = () => {
-    setHasSubscription(true);
-    showToast('Подписка активирована');
+  const handleAddBalance = (amount) => {
+    setSmartMatchBalance(prev => prev + amount);
+    showToast(`Баланс пополнен на ${amount} совпадений`);
+  };
+
+  const handleSpendBalance = (amount) => {
+    setSmartMatchBalance(prev => Math.max(0, prev - amount));
   };
 
   const handleGrantAccess = (treeId) => {
@@ -2016,16 +2247,19 @@ function App() {
     }
   }, [loading]);
 
-  // Close notifications when clicking outside
+  // Close notifications/balance panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (showNotifications && !e.target.closest('.notifications-wrapper')) {
         setShowNotifications(false);
       }
+      if (showBalancePanel && !e.target.closest('.balance-wrapper') && !e.target.closest('.payment-modal')) {
+        setShowBalancePanel(false);
+      }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [showNotifications]);
+  }, [showNotifications, showBalancePanel]);
 
   if (loading) {
     return (
@@ -2077,11 +2311,39 @@ function App() {
           <button className="toolbar-btn" title="Профиль">
             <User size={18} />
           </button>
+          
+          {/* Balance Panel */}
+          <div className="balance-wrapper">
+            <button 
+              className="toolbar-btn" 
+              title="Баланс SmartMatch"
+              onClick={() => {
+                setShowBalancePanel(!showBalancePanel);
+                setShowNotifications(false);
+              }}
+            >
+              <Coins size={18} />
+              {smartMatchBalance > 0 && (
+                <span className="balance-badge">{smartMatchBalance}</span>
+              )}
+            </button>
+            {showBalancePanel && (
+              <BalancePanel 
+                balance={smartMatchBalance}
+                onAddBalance={handleAddBalance}
+                onClose={() => setShowBalancePanel(false)}
+              />
+            )}
+          </div>
+
           <div className="notifications-wrapper">
             <button 
               className="toolbar-btn" 
               title="Уведомления"
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={() => {
+                setShowNotifications(!showNotifications);
+                setShowBalancePanel(false);
+              }}
             >
               <Bell size={18} />
               {notifications.length > 0 && (
@@ -2196,8 +2458,9 @@ function App() {
           setTreeMatches([]);
           setArchiveMatches([]);
         }}
-        hasSubscription={hasSubscription}
-        onSubscribe={handleSubscribe}
+        smartMatchBalance={smartMatchBalance}
+        onAddBalance={handleAddBalance}
+        onSpendBalance={handleSpendBalance}
         grantedAccessIds={grantedAccessIds}
         onGrantAccess={handleGrantAccess}
       />
