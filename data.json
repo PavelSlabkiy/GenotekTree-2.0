@@ -40,8 +40,8 @@
       "lastName": "Василькова",
       "middleName": "Олеговна",
       "gender": "female",
-      "fatherId": "1765224962158",
-      "motherId": "1765225015661",
+      "fatherId": "1765557539810",
+      "motherId": "1765557581901",
       "partnerId": "1762452081793",
       "children": [
         "me"
@@ -50,7 +50,7 @@
       "birthDate": "1978-05-01",
       "birthPlace": "Москва",
       "hasMatch": false,
-      "information": "Врач-кардиолог"
+      "information": "Врач-кардиоло"
     },
     "1762452331540": {
       "id": "1762452331540",
@@ -88,41 +88,41 @@
       "hasMatch": false,
       "information": "Медсестра"
     },
-    "1765224962158": {
-      "id": "1765224962158",
+    "1765557539810": {
+      "id": "1765557539810",
       "name": "Олег",
       "lastName": "Васильков",
       "middleName": "Геннадьевич",
       "gender": "male",
       "fatherId": null,
       "motherId": null,
-      "partnerId": "1765225015661",
+      "partnerId": "1765557581901",
       "children": [
         "1762452081797"
       ],
       "isAlive": true,
       "birthDate": "1945-01-01",
       "birthPlace": "Москва",
-      "hasMatch": true,
-      "information": "Врач-педиатр"
+      "hasMatch": false,
+      "information": "врач"
     },
-    "1765225015661": {
-      "id": "1765225015661",
+    "1765557581901": {
+      "id": "1765557581901",
       "name": "Анастасия",
-      "lastName": "Авинова",
+      "lastName": "Авиновна",
       "middleName": "Петровна",
       "gender": "female",
       "fatherId": null,
       "motherId": null,
-      "partnerId": "1765224962158",
+      "partnerId": "1765557539810",
       "children": [
         "1762452081797"
       ],
       "isAlive": true,
       "birthDate": "1945-07-03",
       "birthPlace": "Астана",
-      "hasMatch": true,
-      "information": "Врач-офтальмолог"
+      "hasMatch": false,
+      "information": "Врач"
     }
   }
 }
