@@ -913,7 +913,8 @@ const AddRelativeModal = ({ isOpen, person, availableRelations, initialRelation,
     lastName: '',
     middleName: '',
     birthDate: '',
-    birthPlace: ''
+    birthPlace: '',
+    information: ''
   });
 
   useEffect(() => {
@@ -924,7 +925,8 @@ const AddRelativeModal = ({ isOpen, person, availableRelations, initialRelation,
         lastName: '',
         middleName: '',
         birthDate: '',
-        birthPlace: ''
+        birthPlace: '',
+        information: ''
       });
     }
   }, [isOpen, initialRelation, availableRelations]);
@@ -1028,6 +1030,16 @@ const AddRelativeModal = ({ isOpen, person, availableRelations, initialRelation,
                     value={formData.birthPlace}
                     onChange={e => setFormData({...formData, birthPlace: e.target.value})}
                     placeholder="Введите место рождения"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Описание</label>
+                  <textarea
+                    className="form-input form-textarea"
+                    value={formData.information}
+                    onChange={e => setFormData({...formData, information: e.target.value})}
+                    placeholder="Введите описание"
+                    rows={3}
                   />
                 </div>
               </>

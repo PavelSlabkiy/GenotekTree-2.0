@@ -12,8 +12,8 @@ class PamyatNarodaParser:
         if self.init_session:
             self.session = self.setup_session()
         self.trashhold = trashhold
-        # Initialize SmartMatching for score comparison
-        self.sm = None
+        # Initialize SmartMatching for score comparison (with empty data/db, we only use compare_idx2idx)
+        self.sm = SmartMatching(data='{"people":{}}', database='{"tree_id":{}}', trashhold=trashhold)
 
     def setup_session(self):
         '''
@@ -142,27 +142,6 @@ class PamyatNarodaParser:
             print(f"[summarize_information] Unexpected error: {e}")
             return information
 
-    def compare_persons(self, person1, person2):
-        '''
-        Compare two persons using SmartMatching algorithm
-        '''
-        from rapidfuzz import fuzz
-        
-        lastname_score = fuzz.token_sort_ratio(person1.get('lastName',''), person2.get('lastName',''))
-        name_score = fuzz.token_sort_ratio(person1.get('name',''), person2.get('name',''))
-        middlename_score = fuzz.token_sort_ratio(person1.get('middleName',''), person2.get('middleName',''))
-        pob_score = fuzz.token_sort_ratio(person1.get('birthPlace',''), person2.get('birthPlace',''))
-        dob_score = fuzz.token_sort_ratio(person1.get('birthDate',''), person2.get('birthDate',''))
-
-        score = (
-            0.25*lastname_score +
-            0.25*name_score +
-            0.2*middlename_score +
-            0.15*pob_score +
-            0.15*dob_score
-        )
-        return score
-
     def archive_search(self, data):
         result = {"matches": [], "matchedDataIds": []}
 
@@ -192,7 +171,7 @@ class PamyatNarodaParser:
             if answer is None:
                 continue
 
-            score = self.compare_persons(query, answer)
+            score = self.sm.compare_idx2idx(query, answer)
 
             if score > self.trashhold and answer.get("information"):
                 answer["information"] = self.summarize_information(answer["information"])
