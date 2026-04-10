@@ -40,8 +40,8 @@
       "lastName": "Василькова",
       "middleName": "Олеговна",
       "gender": "female",
-      "fatherId": "1765557539810",
-      "motherId": "1765557581901",
+      "fatherId": "1773504859250",
+      "motherId": "1773504909249",
       "partnerId": "1762452081793",
       "children": [
         "me"
@@ -88,41 +88,111 @@
       "hasMatch": false,
       "information": "Медсестра"
     },
-    "1765557539810": {
-      "id": "1765557539810",
+    "1773504859250": {
+      "id": "1773504859250",
       "name": "Олег",
       "lastName": "Васильков",
-      "middleName": "Геннадьевич",
+      "middleName": "Васильевич",
       "gender": "male",
-      "fatherId": null,
-      "motherId": null,
-      "partnerId": "1765557581901",
+      "fatherId": "1773504978116ob2b",
+      "motherId": "1773504978116e3td",
+      "partnerId": "1773504909249",
       "children": [
         "1762452081797"
       ],
       "isAlive": true,
       "birthDate": "1945-01-01",
       "birthPlace": "Москва",
-      "hasMatch": true,
-      "information": "врач"
+      "hasMatch": false
     },
-    "1765557581901": {
-      "id": "1765557581901",
+    "1773504909249": {
+      "id": "1773504909249",
       "name": "Анастасия",
-      "lastName": "Авиновна",
-      "middleName": "Петровна",
+      "lastName": "Авинова",
+      "middleName": "Михайловна",
       "gender": "female",
-      "fatherId": null,
-      "motherId": null,
-      "partnerId": "1765557539810",
+      "fatherId": "1773505008221ny99",
+      "motherId": "1773505008221h1ag",
+      "partnerId": "1773504859250",
       "children": [
         "1762452081797"
       ],
       "isAlive": true,
       "birthDate": "1945-07-03",
       "birthPlace": "Астана",
-      "hasMatch": true,
-      "information": "Врач"
+      "hasMatch": false
+    },
+    "1773504978116ob2b": {
+      "id": "1773504978116ob2b",
+      "name": "Василий",
+      "lastName": "Васильков",
+      "middleName": "Евпатьевич",
+      "gender": "male",
+      "fatherId": null,
+      "motherId": null,
+      "partnerId": "1773504978116e3td",
+      "children": [
+        "1773504859250"
+      ],
+      "isAlive": false,
+      "birthDate": "1910-01-01",
+      "birthPlace": "Казахстан",
+      "information": "Тестовое описание",
+      "hasMatch": false
+    },
+    "1773504978116e3td": {
+      "id": "1773504978116e3td",
+      "name": "Алена",
+      "lastName": "Василькова",
+      "middleName": "Антоновна",
+      "gender": "female",
+      "fatherId": null,
+      "motherId": null,
+      "partnerId": "1773504978116ob2b",
+      "children": [
+        "1773504859250"
+      ],
+      "isAlive": false,
+      "birthDate": "1911-01-01",
+      "birthPlace": "Казахстан",
+      "information": "Тестовое описание",
+      "hasMatch": false
+    },
+    "1773505008221ny99": {
+      "id": "1773505008221ny99",
+      "name": "Михаил",
+      "lastName": "Авинов",
+      "middleName": "Терентьевич",
+      "gender": "male",
+      "fatherId": null,
+      "motherId": null,
+      "partnerId": "1773505008221h1ag",
+      "children": [
+        "1773504909249"
+      ],
+      "isAlive": false,
+      "birthDate": "1921",
+      "birthPlace": "Алтайский край",
+      "information": "",
+      "hasMatch": false
+    },
+    "1773505008221h1ag": {
+      "id": "1773505008221h1ag",
+      "name": "Елена",
+      "lastName": "Авинова",
+      "middleName": "Олеговна",
+      "gender": "female",
+      "fatherId": null,
+      "motherId": null,
+      "partnerId": "1773505008221ny99",
+      "children": [
+        "1773504909249"
+      ],
+      "isAlive": false,
+      "birthDate": "1920-05-03",
+      "birthPlace": "Казахстан",
+      "information": "",
+      "hasMatch": false
     }
   }
 }
